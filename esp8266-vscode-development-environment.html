@@ -1,0 +1,152 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="google-site-verification" content="xBT4GhYoi5qRD5tr338pgPM5OWHHIDR6mNg1a3euekI"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="description" content="
+  摘要：本文主要介绍了如何搭建以Visual Studio Code 和 PlatformIO为基础的单片机开发环境，并以esp8266开发板为例，通过在OLED显示屏上显示文字的一个例子介绍如何开发一个单片机程序。
+
+"><meta name="keywords" content="czq's Blog,  博客, 个人网站, 互联网, java,Linux,Web"><meta name="theme-color" content="#000000"><meta property="og:title" content="使用vscode快速搭建单片机开发环境 - Czq's Blog"><meta property="og:type" content="article"><meta property="og:description" content="
+  摘要：本文主要介绍了如何搭建以Visual Studio Code 和 PlatformIO为基础的单片机开发环境，并以esp8266开发板为例，通过在OLED显示屏上显示文字的一个例子介绍如何开发一个单片机程序。
+
+"><meta property="article:published_time" content="2020-06-10T00:00:00Z"><meta property="article:author" content="Ryan"><meta property="article:tag" content="esp8266"><meta property="article:tag" content="单片机"><meta property="article:tag" content="vscode"><meta property="article:tag" content="cpp"><meta property="og:image" content="https://czqu.cc/img/avatar-boy.webp"><meta property="og:url" content="https://czqu.cc/esp8266-vscode-development-environment.html"><meta property="og:site_name" content="Czq's Blog"><title>使用vscode快速搭建单片机开发环境 - Czq's Blog</title><link rel="manifest" href="/pwa/manifest.json"><link rel="shortcut icon" href="/img/favicon.ico"><link rel="canonical" href="https://czqu.cc/esp8266-vscode-development-environment.html"><link rel="stylesheet" href="/css/bootstrap.min.css"><link rel="stylesheet" href="/css/hux-blog.min.css"><link href="/css/font-awesome.min.css" rel="stylesheet" type="text/css"><!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+        <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]--><script></script></head><body ontouchstart=""><script src="/js/qin-blog.js" type="text/javascript"></script><nav class="navbar navbar-default navbar-custom navbar-fixed-top"><div class="container-fluid"><div class="navbar-header page-scroll"><button type="button" class="navbar-toggle"><span class="sr-only">Toggle navigation</span> <span class="icon-bar"></span> <span class="icon-bar"></span> <span class="icon-bar"></span></button> <a class="navbar-brand" href="/">Czq's Blog</a></div><div id="huxblog_navbar"><div class="navbar-collapse"><ul class="nav navbar-nav navbar-right"><li><a href="/">Home</a></li><li><a href="/about/">About</a></li><li><a href="/archive/">Archive</a></li></ul></div></div></div></nav><script>var $body=document.body,$toggle=document.querySelector(".navbar-toggle"),$navbar=document.querySelector("#huxblog_navbar"),$collapse=document.querySelector(".navbar-collapse"),__HuxNav__={close:function(){$navbar.className=" ",setTimeout(function(){$navbar.className.indexOf("in")<0&&($collapse.style.height="0px")},400)},open:function(){$collapse.style.height="auto",$navbar.className+=" in"}};$toggle.addEventListener("click",function(e){0<$navbar.className.indexOf("in")?__HuxNav__.close():__HuxNav__.open()}),document.addEventListener("click",function(e){e.target!=$toggle&&"icon-bar"!=e.target.className&&__HuxNav__.close()})</script><style type="text/css">header.intro-header{position:relative;background-image:url(/img/in-post/2020-06-02-esp8266-vscode-development-environment/aHR0cHM6Ly9pLmxvbGkubmV0LzIwMjAvMDYvMDkvVTNTRXRhWmx6SnhJazVRLnBuZw)}header.intro-header .header-mask{width:100%;height:100%;position:absolute;background:rgba(0,0,0,.6)}</style><header class="intro-header"><div class="header-mask"></div><div class="container"><div class="row"><div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1"><div class="post-heading"><div class="tags"><a class="tag" href="/archive/?tag=esp8266" title="esp8266">esp8266</a> <a class="tag" href="/archive/?tag=%E5%8D%95%E7%89%87%E6%9C%BA" title="单片机">单片机</a> <a class="tag" href="/archive/?tag=vscode" title="vscode">vscode</a> <a class="tag" href="/archive/?tag=cpp" title="cpp">cpp</a></div><h1>使用vscode快速搭建单片机开发环境</h1><h2 class="subheading">Quickly build a Esp8266 development environment</h2><span class="meta">Posted by Ryan on June 10, 2020</span></div></div></div></div></header><article><div class="container"><div class="row"><div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1 post-container"><blockquote><p>摘要：本文主要介绍了如何搭建以Visual Studio Code 和 PlatformIO为基础的单片机开发环境，并以esp8266开发板为例，通过在OLED显示屏上显示文字的一个例子介绍如何开发一个单片机程序。</p></blockquote><p>本文主要使用的环境：</p><blockquote><p>单片机开发板:Esp8266(CH340G)</p><p>Visual Studio Code：1.45.1</p><p>PlatformIO：Core 4.3.4 Home 3.2.2</p><p>U8g2：2.28.6</p></blockquote><h4 id="一硬件部分">一、硬件部分</h4><p>首先就是去某宝买一个esp8266开发板和显示屏，这里我买的是这个（不贴链接，不然有打广告嫌疑，自己去搜哈，有些卖家不送杜邦线的，可以提前问问）</p><p><img src="../img/in-post/2020-06-02-esp8266-vscode-development-environment/10007.png" alt="image-20200609001347090"></p><p>按照卖家的说明将显示屏和开发板连接好</p><p><img src="../img/in-post/2020-06-02-esp8266-vscode-development-environment/100002354.png" alt="image-20200609001656314"></p><h4 id="二软件部分">二、软件部分</h4><h5 id="1-安装visual-studio-code-和-platformio">1. 安装Visual Studio Code 和 PlatformIO</h5><p>vscode: <a href="https://code.visualstudio.com/">https://code.visualstudio.com/</a></p><p>安装完成vscode启动，扩展页面下搜索platformio即可找到,选择第一个Platformio IDE，安装即可（这里需要耐心等待一会）</p><p><img src="../img/in-post/2020-06-02-esp8266-vscode-development-environment/4363463.png" alt="image-20200609004134896"></p><p>安装完成，等待vscode重新加载后，左下角会多一个小房子图标，点击后即可显示Platformio IDE主界面</p><p><img src="../img/in-post/2020-06-02-esp8266-vscode-development-environment/4363463456t.png" alt="image-20200608225407247"></p><h5 id="2安装显示库">2.安装显示库</h5><p>如图点击主界面右侧侧边栏Libraies选项卡，然后直接搜索U8G2然后点击进去，里面有个安装按钮，点一下即可：</p><p><img src="../img/in-post/2020-06-02-esp8266-vscode-development-environment/54y7457.png" alt="image-20200608230257339"></p><h5 id="3-开始我们的第一个程序">3. 开始我们的第一个程序</h5><p>选择新建工程:</p><p><img src="../img/in-post/2020-06-02-esp8266-vscode-development-environment/5475476574767.png" alt="image-20200608225916996"></p><p>​</p><p>​	选择板子类型和框架然后点完成，这里我的设置如下图：</p><p><img src="../img/in-post/2020-06-02-esp8266-vscode-development-environment/135424.png" alt="image-20200608225858345"></p><p>​	然后即可在main.cpp编辑你的代码：</p><p><img src="../img/in-post/2020-06-02-esp8266-vscode-development-environment/1537453.png" alt="image-20200608230108817"></p><p>这里我们输入如下代码</p><div class="language-cpp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+</pre></td><td class="rouge-code"><pre><span class="cp">#include &lt;Arduino.h&gt;
+#include &lt;U8g2lib.h&gt;
+#define bmp_x 64
+#define bmp_y 64
+#define SSD1306_SDA 5
+#define SSD1306_SLK 4
+</span><span class="n">U8G2_SSD1306_128X64_NONAME_F_SW_I2C</span> <span class="nf">u8g2</span><span class="p">(</span><span class="n">U8G2_R0</span><span class="p">,</span> <span class="n">SSD1306_SLK</span><span class="p">,</span> <span class="n">SSD1306_SDA</span><span class="p">);</span>
+<span class="kt">void</span> <span class="nf">setup</span><span class="p">()</span> <span class="p">{</span>
+  <span class="n">u8g2</span><span class="p">.</span><span class="n">begin</span><span class="p">();</span>
+  <span class="n">u8g2</span><span class="p">.</span><span class="n">enableUTF8Print</span><span class="p">();</span>		<span class="c1">// 打开utf-8支持</span>
+<span class="p">}</span>
+
+<span class="kt">void</span> <span class="nf">loop</span><span class="p">()</span> <span class="p">{</span>
+ <span class="n">u8g2</span><span class="p">.</span><span class="n">setFont</span><span class="p">(</span><span class="n">u8g2_font_wqy12_t_gb2312</span><span class="p">);</span>  <span class="c1">// 设置字体</span>
+  
+  <span class="n">u8g2</span><span class="p">.</span><span class="n">setFontDirection</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span>
+  <span class="n">u8g2</span><span class="p">.</span><span class="n">firstPage</span><span class="p">();</span>
+  <span class="k">do</span> <span class="p">{</span>
+    <span class="n">u8g2</span><span class="p">.</span><span class="n">setCursor</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">15</span><span class="p">);</span>
+    <span class="n">u8g2</span><span class="p">.</span><span class="n">print</span><span class="p">(</span><span class="s">"中国"</span><span class="p">);</span>
+    <span class="n">u8g2</span><span class="p">.</span><span class="n">drawUTF8</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">40</span><span class="p">,</span><span class="s">"我爱你"</span><span class="p">);</span>		
+    
+  <span class="p">}</span> <span class="k">while</span> <span class="p">(</span> <span class="n">u8g2</span><span class="p">.</span><span class="n">nextPage</span><span class="p">()</span> <span class="p">);</span>
+  <span class="n">delay</span><span class="p">(</span><span class="mi">1000</span><span class="p">);</span>
+<span class="p">}</span>
+</pre></td></tr></tbody></table></code></pre></div></div><p>代码解释：</p><p>(1).void setup() 函数里的内容启动时会执行一次以后不再执行，一般用于初始化。void loop()函数里的内容将会在机器通电时循环执行，一般用于干正事。</p><p>(2).u8g2.begin()：U8g2的构造函数。可以理解为初始化。</p><p>(3).5、6、7行与你的显示屏有关</p><blockquote><p>具体参见：</p><p>https://blog.csdn.net/weixin_30510153/article/details/96227475 https://github.com/olikraus/u8g2/wiki/gallery</p></blockquote><p>(4).u8g2.setFontDirection()，用于设置方向 可选参数:0123</p><p>(5).u8g2.firstPage()/nextPage()：循环刷新显示，保持这样就好，把你要输出的内容放在这里面就行。</p><p>(6).u8g2.setCursor(x, y) 设置打印功能的光标位置，也就是设置你在上绘制图形或文字的起始位置。</p><p>(7).delay(1000)会使单片机延迟1000个时钟周期也就是暂停一段时间啥也不干留给显示屏处理数据，设置太短会来不及写到屏幕上。</p><h5 id="4连接板子到电脑然后编译并刷写到板子上">4.连接板子到电脑，然后编译并刷写到板子上</h5><p>如下图，可以先点编译再点旁边的上传，也可以直接点上传</p><p><img src="../img/in-post/2020-06-02-esp8266-vscode-development-environment/4535.png" alt="image-20200609000955186"></p><p>当你看到下图时，说明刷写成功了，没成功的仔细检查一下设备连线，还有就是看看你的代码，显示屏设置对不对。</p><p><img src="../img/in-post/2020-06-02-esp8266-vscode-development-environment/10254.png" alt="image-20200609001057699"></p><h4 id="三成果展示">三、成果展示</h4><p>刷写成功后，OLED显示屏应该可以成功显示出我们设置的内容了</p><p><img src="../img/in-post/2020-06-02-esp8266-vscode-development-environment/45374583783.png" alt="image-20200609002205245"></p><blockquote><p>附其他U8G2库常用函数</p><p>1.指令</p><div class="language-cpp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+</pre></td><td class="rouge-code"><pre><span class="n">u8g2</span><span class="p">.</span><span class="n">clearDisplay</span><span class="p">();</span>    <span class="c1">// 清除显示数据及屏幕</span>
+<span class="n">u8g2</span><span class="p">.</span><span class="n">clearBuffer</span><span class="p">();</span>    <span class="c1">// 清Buffer缓冲区的数据</span>
+<span class="n">u8g2</span><span class="p">.</span><span class="n">sendBuffer</span><span class="p">();</span>    <span class="c1">// 将Buffer帧缓冲区的内容发送到显示器,发送刷新消息</span>
+<span class="n">u8g2</span><span class="p">.</span><span class="n">sendF</span><span class="p">(</span><span class="s">"c"</span><span class="p">,</span> <span class="mh">0x0a7</span><span class="p">);</span>    <span class="c1">// 向显示控制器发送特殊命令</span>
+<span class="n">u8g2</span><span class="p">.</span><span class="n">setPowerSave</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>    <span class="c1">// 开关省电模式</span>
+</pre></td></tr></tbody></table></code></pre></div></div><p>2.设置</p><div class="language-cpp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+</pre></td><td class="rouge-code"><pre><span class="n">u8g2</span><span class="p">.</span><span class="n">enableUTF8Print</span><span class="p">();</span>    <span class="c1">//设置启用UTF-8支持</span>
+<span class="n">u8g2</span><span class="p">.</span><span class="n">disableUTF8Print</span><span class="p">();</span>    <span class="c1">//设置停用UTF-8支持</span>
+<span class="n">u8g2</span><span class="p">.</span><span class="n">setContrast</span><span class="p">();</span>    <span class="c1">//设置显示屏亮度/对比度(0-255)</span>
+<span class="n">u8g2</span><span class="p">.</span><span class="n">setBusClock</span><span class="p">();</span>    <span class="c1">//设置连接速度(IIC:200000-400000/SPI:1000000-8000000),在begin()之前调用</span>
+
+<span class="c1">//设置字体</span>
+<span class="n">u8g2</span><span class="p">.</span><span class="n">setFontMode</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span>    <span class="c1">//定义字体背景模式,仅u8g2_xxx_tX字体支持,默认0,禁用透明</span>
+<span class="n">u8g2</span><span class="p">.</span><span class="n">setFontDirection</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span> <span class="c1">//旋转当前显示 参数:0123</span>
+<span class="n">u8g2</span><span class="p">.</span><span class="n">setFont</span><span class="p">(</span><span class="n">u8g2_font_unifont_t_chinese1</span><span class="p">);</span>    <span class="c1">//设置字体</span>
+<span class="n">u8g2</span><span class="p">.</span><span class="n">setFontPosCenter</span><span class="p">();</span>    <span class="c1">//设置字体基线Center/Baseline/Bottom/Top</span>
+
+<span class="c1">//设置颜色</span>
+<span class="n">u8g2</span><span class="p">.</span><span class="n">setDrawColor</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span> <span class="c1">//设置颜色,0透显,1实显,2XOR (drawCircle,drawDisc,drawEllipse和drawFilledEllipse不支持XOR模式)</span>
+
+<span class="c1">//设置光标位置</span>
+<span class="n">u8g2</span><span class="p">.</span><span class="n">home</span><span class="p">();</span>    <span class="c1">//设置光标回初始位置</span>
+<span class="n">u8g2</span><span class="p">.</span><span class="n">setCursor</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">);</span> <span class="c1">//设置打印功能的光标位置</span>
+<span class="n">u8g2</span><span class="p">.</span><span class="n">setBitmapMode</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span>    <span class="c1">//设置是否开启位图函数背景色</span>
+</pre></td></tr></tbody></table></code></pre></div></div><p>3.简单绘制</p><div class="language-cpp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+</pre></td><td class="rouge-code"><pre><span class="n">u8g2</span><span class="p">.</span><span class="n">drawStr</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="s">"文本"</span><span class="p">);</span> <span class="c1">// 绘制文本字符,不能绘制编码大于或等于256,绘制文本前需定义字体.y轴向上绘制</span>
+<span class="n">u8g2</span><span class="p">.</span><span class="n">drawUTF8</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span><span class="s">"字符"</span><span class="p">);</span>    <span class="c1">// 绘制一个编码为UTF-8的字符串.注意1.编译器支持2.代码编辑器支持</span>
+<span class="n">u8g2</span><span class="p">.</span><span class="n">drawGlyph</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">HEX</span><span class="p">);</span>    <span class="c1">// 绘制特殊文本图标(需联合特殊字体)</span>
+<span class="n">u8g2</span><span class="p">.</span><span class="n">print</span><span class="p">();</span>    <span class="c1">// 打印文本字符(需要联合光标位置setCursor,setFont)支持变量和F()</span>
+</pre></td></tr></tbody></table></code></pre></div></div><p>4.高级绘制</p><div class="language-cpp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+</pre></td><td class="rouge-code"><pre><span class="n">u8g2</span><span class="p">.</span><span class="n">drawPixel</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">);</span> <span class="c1">// 在xy位置绘制一个像素.</span>
+<span class="n">u8g2</span><span class="p">.</span><span class="n">drawHLine</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">w</span><span class="p">);</span> <span class="c1">// 绘制水平线 w长度</span>
+<span class="n">u8g2</span><span class="p">.</span><span class="n">drawVLine</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">h</span><span class="p">);</span>    <span class="c1">// 绘制垂直线 h高度</span>
+<span class="n">u8g2</span><span class="p">.</span><span class="n">drawLine</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">y1</span><span class="p">,</span> <span class="n">x2</span><span class="p">,</span> <span class="n">y2</span><span class="p">);</span>    <span class="c1">// 画自由线 x1y1点1 x2y2点2</span>
+<span class="n">u8g2</span><span class="p">.</span><span class="n">drawBox</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">h</span><span class="p">);</span> <span class="c1">// 绘制矩形，画填充矩形w,h,宽度,高度 2 u8g2.drawFrame(x, y, w, h); // 画空心矩形w,h,宽度,高度</span>
+<span class="n">u8g2</span><span class="p">.</span><span class="n">drawRFrame</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">,</span><span class="n">w</span><span class="p">,</span><span class="n">h</span><span class="p">,</span><span class="n">r</span><span class="p">);</span> <span class="c1">//绘制圆角矩形，要求w &gt;= 2*(r+1);h &gt;= 2*(r+1);否则未定义2*(r+1)</span>
+
+<span class="c1">// 正或椭圆</span>
+<span class="n">u8g2</span><span class="p">.</span><span class="n">drawCircle</span><span class="p">(</span><span class="err">圆心</span><span class="n">x</span><span class="p">,</span> <span class="err">圆心</span><span class="n">y</span><span class="p">,</span> <span class="err">半径</span><span class="n">rad</span><span class="p">,</span> <span class="err">部分位置</span><span class="n">U8G2_DRAW_ALL</span><span class="p">);</span>    <span class="c1">// 画空心圆 rad半径 直径为 2rad+1</span>
+<span class="n">u8g2</span><span class="p">.</span><span class="n">drawEllipse</span><span class="p">(</span><span class="err">圆心</span><span class="n">x</span><span class="p">,</span> <span class="err">圆心</span><span class="n">y</span><span class="p">,</span> <span class="err">椭圆长度</span><span class="n">x</span><span class="p">,</span> <span class="err">椭圆宽度</span><span class="n">y</span><span class="p">,</span> <span class="err">部分位置</span><span class="n">U8G2_DRAW_ALL</span><span class="p">)</span>    <span class="c1">//画空心椭圆 长度和宽度均为整个圆的1/2</span>
+<span class="n">U8G2_DRAW_ALL</span>    <span class="cm">/*替换参数:
+U8G2_DRAW_ALL 全部
+U8G2_DRAW_UPPER_RIGHT 上右
+U8G2_DRAW_UPPER_LEFT 上左
+U8G2_DRAW_LOWER_RIGHT 下右
+U8G2_DRAW_LOWER_LEFT 下左*/</span>
+    
+<span class="n">u8g2</span><span class="p">.</span><span class="n">drawTriangle</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span><span class="n">y1</span><span class="p">,</span><span class="n">x2</span><span class="p">,</span><span class="n">y2</span><span class="p">,</span><span class="n">x3</span><span class="p">,</span><span class="n">y3</span><span class="p">);</span> <span class="c1">//绘制多边形，三个点的坐标,实心</span>
+<span class="n">u8g2</span><span class="p">.</span><span class="n">drawXBM</span><span class="p">(</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">bits</span><span class="p">);</span>    <span class="c1">//绘制位图，bits是位图资源表,setBitmapMode(1)切换为旧模式</span>
+</pre></td></tr></tbody></table></code></pre></div></div></blockquote><blockquote><p>本文为博主原创文章，遵循 CC 4.0 BY-SA <a href="/license/">版权协议</a>，转载请附上原文出处链接和本声明。</p></blockquote><hr style="visibility:hidden"><ul class="pager"><li class="previous"><a href="/license.html" data-toggle="tooltip" data-placement="top" title="许可协议|License">Previous<br><span>许可协议|License</span></a></li><li class="next"><a href="/ms17-010-Simple-use.html" data-toggle="tooltip" data-placement="top" title="攻击实战：不动声色获取靶机Win7主机的文件">Next<br><span>攻击实战：不动声色获取靶机Win7主机的文件</span></a></li></ul><hr style="visibility:hidden"><div id="disqus_comment" class="comment"><div id="disqus_thread" class="disqus-thread"></div></div></div><div class="col-lg-2 col-lg-offset-0 visible-lg-block sidebar-container catalog-container"><div class="side-catalog"><hr class="hidden-sm hidden-xs"><h5><a class="catalog-toggle" href="#">CATALOG</a></h5><ul class="catalog-body"></ul></div></div><div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1 sidebar-container"><div class="dropdown navbar-form navbar-right"><input id="search-input" name="word" type="text" aria-haspopup="true" aria-expanded="false" data-toggle="dropdown" class="form-control typeahead" placeholder="搜索"><ul class="dropdown-menu" aria-labelledby="dLabel" id="results-container"></ul></div><script src="/js/simple-jekyll-search.js" type="text/javascript"></script><script>window.simpleJekyllSearch=new SimpleJekyllSearch({searchInput:document.getElementById("search-input"),resultsContainer:document.getElementById("results-container"),json:"/search.json",searchResultTemplate:'<li><a href="{url}" title="{desc}">{title}</a></li>',noResultsText:"没有搜索到文章",limit:20,fuzzy:!0})</script><section><hr class="hidden-sm hidden-xs"><h5><a href="/archive/">FEATURED TAGS</a></h5><div class="tags"><a data-sort="0025" href="/archive/?tag=Linux" title="Linux" rel="3">Linux</a> <a data-sort="0018" href="/archive/?tag=cpp" title="cpp" rel="10">cpp</a> <a data-sort="0020" href="/archive/?tag=%E7%AE%97%E6%B3%95" title="算法" rel="8">算法</a> <a data-sort="0022" href="/archive/?tag=%E5%90%8E%E7%AB%AF" title="后端" rel="6">后端</a> <a data-sort="0022" href="/archive/?tag=%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84" title="数据结构" rel="6">数据结构</a> <a data-sort="0024" href="/archive/?tag=%E6%80%A7%E8%83%BD" title="性能" rel="4">性能</a> <a data-sort="0024" href="/archive/?tag=mysql" title="mysql" rel="4">mysql</a> <a data-sort="0026" href="/archive/?tag=%E4%BA%8C%E8%BF%9B%E5%88%B6" title="二进制" rel="2">二进制</a> <a data-sort="0026" href="/archive/?tag=%E4%BF%A1%E6%81%AF%E5%AE%89%E5%85%A8" title="信息安全" rel="2">信息安全</a> <a data-sort="0026" href="/archive/?tag=%E5%89%8D%E7%AB%AF" title="前端" rel="2">前端</a> <a data-sort="0026" href="/archive/?tag=%E9%93%BE%E8%A1%A8" title="链表" rel="2">链表</a> <a data-sort="0026" href="/archive/?tag=java" title="java" rel="2">java</a> <a data-sort="0026" href="/archive/?tag=kali" title="kali" rel="2">kali</a> <a data-sort="0026" href="/archive/?tag=linux" title="linux" rel="2">linux</a></div></section><hr><h5>FRIENDS</h5><ul class="list-inline"><li><a href="https://2084team.cn/">2084 Team</a></li></ul></div></div><div class="row"><div id="gitmentContainer"></div><script src="/js/gitment.browser.js"></script><link rel="stylesheet" href="/css/default.css"></div></div></article><script type="text/javascript">var disqus_shortname="donaldxy",disqus_identifier="/esp8266-vscode-development-environment",disqus_url="https://czqu.cc/esp8266-vscode-development-environment.html";!function(){if(is_global){var e=document.createElement("script");e.type="text/javascript",e.async=!0,e.src="//"+disqus_shortname+".disqus.com/embed.js",(document.getElementsByTagName("head")[0]||document.getElementsByTagName("body")[0]).appendChild(e)}else document.getElementById("disqus_comment").style.display="none"}()</script><script>if(is_global)document.getElementById("gitmentContainer").style.display="none";else{var gitment=new Gitment({id:"/esp8266-vscode-development-environment.html",owner:"czqu",repo:"czqu.github.io",oauth:{client_id:"23a9781cae2172c5d591",client_secret:"4493f8b5c72f024f1a7b79d556b7e43599f918ed"}});gitment.render("gitmentContainer")}</script><script>function async(e,n){var t=document,a="script",r=t.createElement(a),c=t.getElementsByTagName(a)[0];r.src=e,n&&r.addEventListener("load",function(e){n(null,e)},!1),c.parentNode.insertBefore(r,c)}</script><script>async("/js/anchor.min.js",function(){anchors.options={visible:"hover",placement:"right"},anchors.add().remove(".intro-header h1").remove(".subheading").remove(".sidebar-container h5")})</script><style>@media all and (min-width:800px){.anchorjs-link{position:absolute;left:-.75em;font-size:1.1em;margin-top:-.1em}}</style><footer><div class="container"><div class="row"><div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1"><ul class="list-inline text-center"><li><a id="rss" href="/feed.xml"><span class="fa-stack fa-lg"><i class="fa fa-circle fa-stack-2x"></i> <i class="fa fa-rss fa-stack-1x fa-inverse"></i></span></a></li><li><a target="_blank" href="https://www.zhihu.com/people/czqu"><span class="fa-stack fa-lg"><i class="fa fa-circle fa-stack-2x"></i> <i class="fa fa-stack-1x fa-inverse">知</i></span></a></li><li><a target="_blank" href="https://blog.csdn.net/weixin_44409903"><span class="fa-stack fa-lg"><i class="fa fa-circle fa-stack-2x"></i> <i class="fa fa-stack-1x fa-inverse">C</i></span></a></li></ul><p class="copyright text-muted">Copyright &copy; Czq's Blog 2020<br><a id="switchsite" href="https://blog.xiyuan.ren/">国内访问</a> &nbsp; &nbsp;&nbsp; <a href="/license.html">许可协议 License</a><script type="text/javascript">var linkobj=document.getElementById("switchsite");current_url=window.location.href,is_global?(target_url=replacedomain(current_url,document.domain,"blog.czqu.ren"),linkobj.href=target_url,linkobj.innerText="国内访问"):(target_url=replacedomain(current_url,document.domain,"czqu.cc"),linkobj.href=target_url,linkobj.innerText="海外访问")</script></p></div></div></div></footer><script src="/js/jquery.min.js"></script><script src="/js/bootstrap.min.js"></script><script src="/js/hux-blog.min.js"></script><script src="/js/snackbar.js"></script><script src="/js/sw-registration.js"></script><script>function async(e,n){var t=document,a="script",r=t.createElement(a),c=t.getElementsByTagName(a)[0];r.src=e,n&&r.addEventListener("load",function(e){n(null,e)},!1),c.parentNode.insertBefore(r,c)}</script><script>async("/js/fastclick.min.js",function(){var c=document.querySelector("nav");c&&FastClick.attach(c)})</script><script>var _gaId="UA-171260366-1",_gaDomain="czqu.cc";_gaDomain=is_global?(_gaId="UA-171260366-1","czqu.cc"):(_gaId="UA-171260366-2","blog.czqu.ren"),function(a,e,g,c,n,o,t){a.GoogleAnalyticsObject=n,a.ga=a.ga||function(){(a.ga.q=a.ga.q||[]).push(arguments)},a.ga.l=1*new Date,o=e.createElement(g),t=e.getElementsByTagName(g)[0],o.async=1,o.src="//www.google-analytics.com/analytics.js",t.parentNode.insertBefore(o,t)}(window,document,"script",0,"ga"),ga("create",_gaId,_gaDomain),ga("send","pageview")</script><script>var _baId="202567f05f85026a62a117eec19b4a09",linkobj=document.getElementById("switchsite");_baId=is_global?"202567f05f85026a62a117eec19b4a09":"496677e3ceac55257d74003c6c3c2f3b";var _hmt=_hmt||[];!function(){var e=document.createElement("script");e.src="//hm.baidu.com/hm.js?"+_baId;var a=document.getElementsByTagName("script")[0];a.parentNode.insertBefore(e,a)}()</script><script type="text/javascript">function generateCatalog(e){var a,l,n,t,o,c;return _containerSelector="div.post-container",a=$(_containerSelector).find("h1,h2,h3,h4,h5,h6"),$(e).html(""),a.each(function(){l=$(this).prop("tagName").toLowerCase(),o="#"+$(this).prop("id"),n=$(this).text(),c=$('<a href="'+o+'" rel="nofollow">'+n+"</a>"),t=$('<li class="'+l+'_nav"></li>').append(c),$(e).append(t)}),!0}generateCatalog(".catalog-body"),$(".catalog-toggle").click(function(e){e.preventDefault(),$(".side-catalog").toggleClass("fold")}),async("/js/jquery.nav.js",function(){$(".catalog-body").onePageNav({currentClass:"active",changeHash:!1,easing:"swing",filter:"",scrollSpeed:700,scrollOffset:0,scrollThreshold:.2,begin:null,end:null,scrollChange:null,padding:80})})</script><img src="/img/icon_wechat.png" width="0" height="0"></body></html>

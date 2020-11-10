@@ -1,0 +1,925 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="google-site-verification" content="xBT4GhYoi5qRD5tr338pgPM5OWHHIDR6mNg1a3euekI"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="description" content="1. Mysql的体系结构概览
+"><meta name="keywords" content="czq's Blog,  博客, 个人网站, 互联网, java,Linux,Web"><meta name="theme-color" content="#000000"><meta property="og:title" content="MySQL学习笔记高级篇（二） - Czq's Blog"><meta property="og:type" content="article"><meta property="og:description" content="1. Mysql的体系结构概览
+"><meta property="article:published_time" content="2020-09-14T16:00:00Z"><meta property="article:author" content="陈子琦"><meta property="article:tag" content="mysql"><meta property="article:tag" content="后端"><meta property="article:tag" content="性能"><meta property="og:image" content="https://czqu.cc/img/avatar-boy.webp"><meta property="og:url" content="https://czqu.cc/mysql-note-a02.html"><meta property="og:site_name" content="Czq's Blog"><title>MySQL学习笔记高级篇（二） - Czq's Blog</title><link rel="manifest" href="/pwa/manifest.json"><link rel="shortcut icon" href="/img/favicon.ico"><link rel="canonical" href="https://czqu.cc/mysql-note-a02.html"><link rel="stylesheet" href="/css/bootstrap.min.css"><link rel="stylesheet" href="/css/hux-blog.min.css"><link href="/css/font-awesome.min.css" rel="stylesheet" type="text/css"><!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+        <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]--><script></script></head><body ontouchstart=""><script src="/js/qin-blog.js" type="text/javascript"></script><nav class="navbar navbar-default navbar-custom navbar-fixed-top"><div class="container-fluid"><div class="navbar-header page-scroll"><button type="button" class="navbar-toggle"><span class="sr-only">Toggle navigation</span> <span class="icon-bar"></span> <span class="icon-bar"></span> <span class="icon-bar"></span></button> <a class="navbar-brand" href="/">Czq's Blog</a></div><div id="huxblog_navbar"><div class="navbar-collapse"><ul class="nav navbar-nav navbar-right"><li><a href="/">Home</a></li><li><a href="/about/">About</a></li><li><a href="/archive/">Archive</a></li></ul></div></div></div></nav><script>var $body=document.body,$toggle=document.querySelector(".navbar-toggle"),$navbar=document.querySelector("#huxblog_navbar"),$collapse=document.querySelector(".navbar-collapse"),__HuxNav__={close:function(){$navbar.className=" ",setTimeout(function(){$navbar.className.indexOf("in")<0&&($collapse.style.height="0px")},400)},open:function(){$collapse.style.height="auto",$navbar.className+=" in"}};$toggle.addEventListener("click",function(e){0<$navbar.className.indexOf("in")?__HuxNav__.close():__HuxNav__.open()}),document.addEventListener("click",function(e){e.target!=$toggle&&"icon-bar"!=e.target.className&&__HuxNav__.close()})</script><style type="text/css">header.intro-header{position:relative;background-image:url(/img/home-bg-notdimmed.webp)}</style><header class="intro-header"><div class="header-mask"></div><div class="container"><div class="row"><div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1"><div class="post-heading"><div class="tags"><a class="tag" href="/archive/?tag=mysql" title="mysql">mysql</a> <a class="tag" href="/archive/?tag=%E5%90%8E%E7%AB%AF" title="后端">后端</a> <a class="tag" href="/archive/?tag=%E6%80%A7%E8%83%BD" title="性能">性能</a></div><h1>MySQL学习笔记高级篇（二）</h1><h2 class="subheading"></h2><span class="meta">Posted by 陈子琦 on September 14, 2020</span></div></div></div></div></header><article><div class="container"><div class="row"><div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1 post-container"><h3 id="1-mysql的体系结构概览">1. Mysql的体系结构概览</h3><p><img src="../../img/in-post/2020-9-14-mysql/assets2/000001.jpg" alt="171214401286615"></p><p>整个MySQL Server由以下组成</p><ul><li>Connection Pool : 连接池组件</li><li>Management Services &amp; Utilities : 管理服务和工具组件</li><li>SQL Interface : SQL接口组件</li><li>Parser : 查询分析器组件</li><li>Optimizer : 优化器组件</li><li>Caches &amp; Buffers : 缓冲池组件</li><li>Pluggable Storage Engines : 存储引擎</li><li>File System : 文件系统</li></ul><p>1） 连接层</p><p>最上层是一些客户端和链接服务，包含本地sock 通信和大多数基于客户端/服务端工具实现的类似于 TCP/IP的通信。主要完成一些类似于连接处理、授权认证、及相关的安全方案。在该层上引入了线程池的概念，为通过认证安全接入的客户端提供线程。同样在该层上可以实现基于SSL的安全链接。服务器也会为安全接入的每个客户端验证它所具有的操作权限。</p><p>2） 服务层</p><p>第二层架构主要完成大多数的核心服务功能，如SQL接口，并完成缓存的查询，SQL的分析和优化，部分内置函数的执行。所有跨存储引擎的功能也在这一层实现，如 过程、函数等。在该层，服务器会解析查询并创建相应的内部解析树，并对其完成相应的优化如确定表的查询的顺序，是否利用索引等， 最后生成相应的执行操作。如果是select语句，服务器还会查询内部的缓存，如果缓存空间足够大，这样在解决大量读操作的环境中能够很好的提升系统的性能。</p><p>3） 引擎层</p><p>存储引擎层， 存储引擎真正的负责了MySQL中数据的存储和提取，服务器通过API和存储引擎进行通信。不同的存储引擎具有不同的功能，这样我们可以根据自己的需要，来选取合适的存储引擎。</p><p>4）存储层</p><p>数据存储层， 主要是将数据存储在文件系统之上，并完成与存储引擎的交互。</p><p>和其他数据库相比，MySQL有点与众不同，它的架构可以在多种不同场景中应用并发挥良好作用。主要体现在存储引擎上，插件式的存储引擎架构，将查询处理和其他的系统任务以及数据的存储提取分离。这种架构可以根据业务的需求和实际需要选择合适的存储引擎。</p><h3 id="2-存储引擎">2. 存储引擎</h3><h4 id="21-存储引擎概述">2.1 存储引擎概述</h4><p>​	和大多数的数据库不同, MySQL中有一个存储引擎的概念, 针对不同的存储需求可以选择最优的存储引擎。</p><p>​	存储引擎就是存储数据，建立索引，更新查询数据等等技术的实现方式 。存储引擎是基于表的，而不是基于库的。所以存储引擎也可被称为表类型。</p><p>​	Oracle，SqlServer等数据库只有一种存储引擎。MySQL提供了插件式的存储引擎架构。所以MySQL存在多种存储引擎，可以根据需要使用相应引擎，或者编写存储引擎。</p><p>​	MySQL5.0支持的存储引擎包含 ： InnoDB 、MyISAM 、BDB、MEMORY、MERGE、EXAMPLE、NDB Cluster、ARCHIVE、CSV、BLACKHOLE、FEDERATED等，其中InnoDB和BDB提供事务安全表，其他存储引擎是非事务安全表。</p><p>可以通过指定 show engines ， 来查询当前数据库支持的存储引擎 ：</p><p><img src="../../img/in-post/2020-9-14-mysql/assets2/1551186043529.png" alt="1551186043529"></p><p>创建新表时如果不指定存储引擎，那么系统就会使用默认的存储引擎，MySQL5.5之前的默认存储引擎是MyISAM，5.5之后就改为了InnoDB。</p><p>查看Mysql数据库默认的存储引擎 ， 指令 ：</p><div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+</pre></td><td class="rouge-code"><pre> show variables like '%storage_engine%' ； 
+</pre></td></tr></tbody></table></code></pre></div></div><p><img src="../../img/in-post/2020-9-14-mysql/assets2/1556086372754.png" alt="1556086372754"></p><h4 id="22-各种存储引擎特性">2.2 各种存储引擎特性</h4><p>下面重点介绍几种常用的存储引擎， 并对比各个存储引擎之间的区别， 如下表所示 ：</p><table><thead><tr><th>特点</th><th>InnoDB</th><th>MyISAM</th><th>MEMORY</th><th>MERGE</th><th>NDB</th></tr></thead><tbody><tr><td>存储限制</td><td>64TB</td><td>有</td><td>有</td><td>没有</td><td>有</td></tr><tr><td>事务安全</td><td>==支持==</td><td> </td><td> </td><td> </td><td> </td></tr><tr><td>锁机制</td><td>==行锁(适合高并发)==</td><td>==表锁==</td><td>表锁</td><td>表锁</td><td>行锁</td></tr><tr><td>B树索引</td><td>支持</td><td>支持</td><td>支持</td><td>支持</td><td>支持</td></tr><tr><td>哈希索引</td><td> </td><td> </td><td>支持</td><td> </td><td> </td></tr><tr><td>全文索引</td><td>支持(5.6版本之后)</td><td>支持</td><td> </td><td> </td><td> </td></tr><tr><td>集群索引</td><td>支持</td><td> </td><td> </td><td> </td><td> </td></tr><tr><td>数据索引</td><td>支持</td><td> </td><td>支持</td><td> </td><td>支持</td></tr><tr><td>索引缓存</td><td>支持</td><td>支持</td><td>支持</td><td>支持</td><td>支持</td></tr><tr><td>数据可压缩</td><td> </td><td>支持</td><td> </td><td> </td><td> </td></tr><tr><td>空间使用</td><td>高</td><td>低</td><td>N/A</td><td>低</td><td>低</td></tr><tr><td>内存使用</td><td>高</td><td>低</td><td>中等</td><td>低</td><td>高</td></tr><tr><td>批量插入速度</td><td>低</td><td>高</td><td>高</td><td>高</td><td>高</td></tr><tr><td>支持外键</td><td>==支持==</td><td> </td><td> </td><td> </td><td> </td></tr></tbody></table><p>下面我们将重点介绍最长使用的两种存储引擎： InnoDB、MyISAM ， 另外两种 MEMORY、MERGE ， 了解即可。</p><h5 id="221-innodb">2.2.1 InnoDB</h5><p>​	InnoDB存储引擎是Mysql的默认存储引擎。InnoDB存储引擎提供了具有提交、回滚、崩溃恢复能力的事务安全。但是对比MyISAM的存储引擎，InnoDB写的处理效率差一些，并且会占用更多的磁盘空间以保留数据和索引。</p><p>InnoDB存储引擎不同于其他存储引擎的特点 ：</p><p><strong>事务控制</strong></p><div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+</pre></td><td class="rouge-code"><pre>create table goods_innodb(
+	id int NOT NULL AUTO_INCREMENT,
+	name varchar(20) NOT NULL,
+    primary key(id)
+)ENGINE=innodb DEFAULT CHARSET=utf8;
+</pre></td></tr></tbody></table></code></pre></div></div><div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+</pre></td><td class="rouge-code"><pre>start transaction;
+
+insert into goods_innodb(id,name)values(null,'Meta20');
+
+commit;
+</pre></td></tr></tbody></table></code></pre></div></div><p><img src="../../img/in-post/2020-9-14-mysql/assets2/1556075130115.png" alt="1556075130115"></p><p>测试，发现在InnoDB中是存在事务的 ；</p><p><strong>外键约束</strong></p><p>​	MySQL支持外键的存储引擎只有InnoDB ， 在创建外键的时候， 要求父表必须有对应的索引 ， 子表在创建外键的时候， 也会自动的创建对应的索引。</p><p>​	下面两张表中 ， country_innodb是父表 ， country_id为主键索引，city_innodb表是子表，country_id字段为外键，对应于country_innodb表的主键country_id 。</p><div class="language-sql highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+</pre></td><td class="rouge-code"><pre><span class="k">create</span> <span class="k">table</span> <span class="n">country_innodb</span><span class="p">(</span>
+	<span class="n">country_id</span> <span class="nb">int</span> <span class="k">NOT</span> <span class="k">NULL</span> <span class="n">AUTO_INCREMENT</span><span class="p">,</span>
+    <span class="n">country_name</span> <span class="nb">varchar</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span> <span class="k">NOT</span> <span class="k">NULL</span><span class="p">,</span>
+    <span class="k">primary</span> <span class="k">key</span><span class="p">(</span><span class="n">country_id</span><span class="p">)</span>
+<span class="p">)</span><span class="n">ENGINE</span><span class="o">=</span><span class="n">InnoDB</span> <span class="k">DEFAULT</span> <span class="n">CHARSET</span><span class="o">=</span><span class="n">utf8</span><span class="p">;</span>
+
+
+<span class="k">create</span> <span class="k">table</span> <span class="n">city_innodb</span><span class="p">(</span>
+	<span class="n">city_id</span> <span class="nb">int</span> <span class="k">NOT</span> <span class="k">NULL</span> <span class="n">AUTO_INCREMENT</span><span class="p">,</span>
+    <span class="n">city_name</span> <span class="nb">varchar</span><span class="p">(</span><span class="mi">50</span><span class="p">)</span> <span class="k">NOT</span> <span class="k">NULL</span><span class="p">,</span>
+    <span class="n">country_id</span> <span class="nb">int</span> <span class="k">NOT</span> <span class="k">NULL</span><span class="p">,</span>
+    <span class="k">primary</span> <span class="k">key</span><span class="p">(</span><span class="n">city_id</span><span class="p">),</span>
+    <span class="k">key</span> <span class="n">idx_fk_country_id</span><span class="p">(</span><span class="n">country_id</span><span class="p">),</span>
+    <span class="k">CONSTRAINT</span> <span class="nv">`fk_city_country`</span> <span class="k">FOREIGN</span> <span class="k">KEY</span><span class="p">(</span><span class="n">country_id</span><span class="p">)</span> <span class="k">REFERENCES</span> <span class="n">country_innodb</span><span class="p">(</span><span class="n">country_id</span><span class="p">)</span> <span class="k">ON</span> <span class="k">DELETE</span> <span class="k">RESTRICT</span> <span class="k">ON</span> <span class="k">UPDATE</span> <span class="k">CASCADE</span>
+<span class="p">)</span><span class="n">ENGINE</span><span class="o">=</span><span class="n">InnoDB</span> <span class="k">DEFAULT</span> <span class="n">CHARSET</span><span class="o">=</span><span class="n">utf8</span><span class="p">;</span>
+
+
+
+<span class="k">insert</span> <span class="k">into</span> <span class="n">country_innodb</span> <span class="k">values</span><span class="p">(</span><span class="k">null</span><span class="p">,</span><span class="s1">'China'</span><span class="p">),(</span><span class="k">null</span><span class="p">,</span><span class="s1">'America'</span><span class="p">),(</span><span class="k">null</span><span class="p">,</span><span class="s1">'Japan'</span><span class="p">);</span>
+<span class="k">insert</span> <span class="k">into</span> <span class="n">city_innodb</span> <span class="k">values</span><span class="p">(</span><span class="k">null</span><span class="p">,</span><span class="s1">'Xian'</span><span class="p">,</span><span class="mi">1</span><span class="p">),(</span><span class="k">null</span><span class="p">,</span><span class="s1">'NewYork'</span><span class="p">,</span><span class="mi">2</span><span class="p">),(</span><span class="k">null</span><span class="p">,</span><span class="s1">'BeiJing'</span><span class="p">,</span><span class="mi">1</span><span class="p">);</span>
+
+</pre></td></tr></tbody></table></code></pre></div></div><p>在创建索引时， 可以指定在删除、更新父表时，对子表进行的相应操作，包括 RESTRICT、CASCADE、SET NULL 和 NO ACTION。</p><p>RESTRICT和NO ACTION相同， 是指限制在子表有关联记录的情况下， 父表不能更新；</p><p>CASCADE表示父表在更新或者删除时，更新或者删除子表对应的记录；</p><p>SET NULL 则表示父表在更新或者删除的时候，子表的对应字段被SET NULL 。</p><p>针对上面创建的两个表， 子表的外键指定是ON DELETE RESTRICT ON UPDATE CASCADE 方式的， 那么在主表删除记录的时候， 如果子表有对应记录， 则不允许删除， 主表在更新记录的时候， 如果子表有对应记录， 则子表对应更新 。</p><p>表中数据如下图所示 ：</p><p><img src="../../img/in-post/2020-9-14-mysql/assets2/1556087540767.png" alt="1556087540767"></p><p>外键信息可以使用如下两种方式查看 ：</p><div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+</pre></td><td class="rouge-code"><pre>show create table city_innodb ;
+</pre></td></tr></tbody></table></code></pre></div></div><p><img src="../../img/in-post/2020-9-14-mysql/assets2/1556087611295.png" alt="1556087611295"></p><p>删除country_id为1 的country数据：</p><div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+</pre></td><td class="rouge-code"><pre> delete from country_innodb where country_id = 1;
+</pre></td></tr></tbody></table></code></pre></div></div><p><img src="../../img/in-post/2020-9-14-mysql/assets2/1556087719145.png" alt="1556087719145"></p><p>更新主表country表的字段 country_id :</p><div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+</pre></td><td class="rouge-code"><pre>update country_innodb set country_id = 100 where country_id = 1;
+</pre></td></tr></tbody></table></code></pre></div></div><p><img src="../../img/in-post/2020-9-14-mysql/assets2/1556087759615.png" alt="1556087759615"></p><p>更新后， 子表的数据信息为 ：</p><p><img src="../../img/in-post/2020-9-14-mysql/assets2/1556087793738.png" alt="1556087793738"></p><p><strong>存储方式</strong></p><p>InnoDB 存储表和索引有以下两种方式 ：</p><p>①. 使用共享表空间存储， 这种方式创建的表的表结构保存在.frm文件中， 数据和索引保存在 innodb_data_home_dir 和 innodb_data_file_path定义的表空间中，可以是多个文件。</p><p>②. 使用多表空间存储， 这种方式创建的表的表结构仍然存在 .frm 文件中，但是每个表的数据和索引单独保存在 .ibd 中。</p><p><img src="../../img/in-post/2020-9-14-mysql/assets2/1556075336630.png" alt="1556075336630"></p><h5 id="222-myisam">2.2.2 MyISAM</h5><p>​	MyISAM 不支持事务、也不支持外键，其优势是访问的速度快，对事务的完整性没有要求或者以SELECT、INSERT为主的应用基本上都可以使用这个引擎来创建表 。有以下两个比较重要的特点：</p><p><strong>不支持事务</strong></p><div class="language-sql highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+</pre></td><td class="rouge-code"><pre><span class="k">create</span> <span class="k">table</span> <span class="n">goods_myisam</span><span class="p">(</span>
+	<span class="n">id</span> <span class="nb">int</span> <span class="k">NOT</span> <span class="k">NULL</span> <span class="n">AUTO_INCREMENT</span><span class="p">,</span>
+	<span class="n">name</span> <span class="nb">varchar</span><span class="p">(</span><span class="mi">20</span><span class="p">)</span> <span class="k">NOT</span> <span class="k">NULL</span><span class="p">,</span>
+    <span class="k">primary</span> <span class="k">key</span><span class="p">(</span><span class="n">id</span><span class="p">)</span>
+<span class="p">)</span><span class="n">ENGINE</span><span class="o">=</span><span class="n">myisam</span> <span class="k">DEFAULT</span> <span class="n">CHARSET</span><span class="o">=</span><span class="n">utf8</span><span class="p">;</span>
+</pre></td></tr></tbody></table></code></pre></div></div><p><img src="../../img/in-post/2020-9-14-mysql/assets2/1551347590309.png" alt="1551347590309"></p><p>通过测试，我们发现，在MyISAM存储引擎中，是没有事务控制的 ；</p><p><strong>文件存储方式</strong></p><p>每个MyISAM在磁盘上存储成3个文件，其文件名都和表名相同，但拓展名分别是 ：</p><p>.frm (存储表定义)；</p><p>.MYD(MYData , 存储数据)；</p><p>.MYI(MYIndex , 存储索引)；</p><p><img src="../../img/in-post/2020-9-14-mysql/assets2/1556075073836.png" alt="1556075073836"></p><h5 id="223-memory">2.2.3 MEMORY</h5><p>​	Memory存储引擎将表的数据存放在内存中。每个MEMORY表实际对应一个磁盘文件，格式是.frm ，该文件中只存储表的结构，而其数据文件，都是存储在内存中，这样有利于数据的快速处理，提高整个表的效率。MEMORY 类型的表访问非常地快，因为他的数据是存放在内存中的，并且默认使用HASH索引 ， 但是服务一旦关闭，表中的数据就会丢失。</p><h5 id="224-merge">2.2.4 MERGE</h5><p>​	MERGE存储引擎是一组MyISAM表的组合，这些MyISAM表必须结构完全相同，MERGE表本身并没有存储数据，对MERGE类型的表可以进行查询、更新、删除操作，这些操作实际上是对内部的MyISAM表进行的。</p><p>​	对于MERGE类型表的插入操作，是通过INSERT_METHOD子句定义插入的表，可以有3个不同的值，使用FIRST 或 LAST 值使得插入操作被相应地作用在第一或者最后一个表上，不定义这个子句或者定义为NO，表示不能对这个MERGE表执行插入操作。</p><p>​	可以对MERGE表进行DROP操作，但是这个操作只是删除MERGE表的定义，对内部的表是没有任何影响的。</p><p><img src="../../img/in-post/2020-9-14-mysql/assets2/1556076359503.png" alt="1556076359503"></p><p>下面是一个创建和使用MERGE表的示例 ：</p><p>1）. 创建3个测试表 order_1990, order_1991, order_all , 其中order_all是前两个表的MERGE表 ：</p><div class="language-sql highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+</pre></td><td class="rouge-code"><pre><span class="k">create</span> <span class="k">table</span> <span class="n">order_1990</span><span class="p">(</span>
+	<span class="n">order_id</span> <span class="nb">int</span> <span class="p">,</span>
+	<span class="n">order_money</span> <span class="nb">double</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span><span class="mi">2</span><span class="p">),</span>
+	<span class="n">order_address</span> <span class="nb">varchar</span><span class="p">(</span><span class="mi">50</span><span class="p">),</span>
+	<span class="k">primary</span> <span class="k">key</span> <span class="p">(</span><span class="n">order_id</span><span class="p">)</span>
+<span class="p">)</span><span class="n">engine</span> <span class="o">=</span> <span class="n">myisam</span> <span class="k">default</span> <span class="n">charset</span><span class="o">=</span><span class="n">utf8</span><span class="p">;</span>
+
+
+<span class="k">create</span> <span class="k">table</span> <span class="n">order_1991</span><span class="p">(</span>
+	<span class="n">order_id</span> <span class="nb">int</span> <span class="p">,</span>
+	<span class="n">order_money</span> <span class="nb">double</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span><span class="mi">2</span><span class="p">),</span>
+	<span class="n">order_address</span> <span class="nb">varchar</span><span class="p">(</span><span class="mi">50</span><span class="p">),</span>
+	<span class="k">primary</span> <span class="k">key</span> <span class="p">(</span><span class="n">order_id</span><span class="p">)</span>
+<span class="p">)</span><span class="n">engine</span> <span class="o">=</span> <span class="n">myisam</span> <span class="k">default</span> <span class="n">charset</span><span class="o">=</span><span class="n">utf8</span><span class="p">;</span>
+
+
+<span class="k">create</span> <span class="k">table</span> <span class="n">order_all</span><span class="p">(</span>
+	<span class="n">order_id</span> <span class="nb">int</span> <span class="p">,</span>
+	<span class="n">order_money</span> <span class="nb">double</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span><span class="mi">2</span><span class="p">),</span>
+	<span class="n">order_address</span> <span class="nb">varchar</span><span class="p">(</span><span class="mi">50</span><span class="p">),</span>
+	<span class="k">primary</span> <span class="k">key</span> <span class="p">(</span><span class="n">order_id</span><span class="p">)</span>
+<span class="p">)</span><span class="n">engine</span> <span class="o">=</span> <span class="n">merge</span> <span class="k">union</span> <span class="o">=</span> <span class="p">(</span><span class="n">order_1990</span><span class="p">,</span><span class="n">order_1991</span><span class="p">)</span> <span class="n">INSERT_METHOD</span><span class="o">=</span><span class="k">LAST</span> <span class="k">default</span> <span class="n">charset</span><span class="o">=</span><span class="n">utf8</span><span class="p">;</span>
+
+
+</pre></td></tr></tbody></table></code></pre></div></div><p>2）. 分别向两张表中插入记录</p><div class="language-sql highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+</pre></td><td class="rouge-code"><pre><span class="k">insert</span> <span class="k">into</span> <span class="n">order_1990</span> <span class="k">values</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">100</span><span class="p">.</span><span class="mi">0</span><span class="p">,</span><span class="s1">'北京'</span><span class="p">);</span>
+<span class="k">insert</span> <span class="k">into</span> <span class="n">order_1990</span> <span class="k">values</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">100</span><span class="p">.</span><span class="mi">0</span><span class="p">,</span><span class="s1">'上海'</span><span class="p">);</span>
+
+<span class="k">insert</span> <span class="k">into</span> <span class="n">order_1991</span> <span class="k">values</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span><span class="mi">200</span><span class="p">.</span><span class="mi">0</span><span class="p">,</span><span class="s1">'北京'</span><span class="p">);</span>
+<span class="k">insert</span> <span class="k">into</span> <span class="n">order_1991</span> <span class="k">values</span><span class="p">(</span><span class="mi">11</span><span class="p">,</span><span class="mi">200</span><span class="p">.</span><span class="mi">0</span><span class="p">,</span><span class="s1">'上海'</span><span class="p">);</span>
+</pre></td></tr></tbody></table></code></pre></div></div><p>3）. 查询3张表中的数据。</p><p>order_1990中的数据 ：</p><p><img src="../../img/in-post/2020-9-14-mysql/assets2/1551408083254.png" alt="1551408083254"></p><p>order_1991中的数据 ：</p><p><img src="../../img/in-post/2020-9-14-mysql/assets2/1551408133323.png" alt="1551408133323"></p><p>order_all中的数据 ：</p><p><img src="../../img/in-post/2020-9-14-mysql/assets2/1551408216185.png" alt="1551408216185"></p><p>​</p><p>4）. 往order_all中插入一条记录 ，由于在MERGE表定义时，INSERT_METHOD 选择的是LAST，那么插入的数据会想最后一张表中插入。</p><div class="language-sql highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+</pre></td><td class="rouge-code"><pre><span class="k">insert</span> <span class="k">into</span> <span class="n">order_all</span> <span class="k">values</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span><span class="mi">10000</span><span class="p">.</span><span class="mi">0</span><span class="p">,</span><span class="s1">'西安'</span><span class="p">)</span><span class="err">；</span>
+</pre></td></tr></tbody></table></code></pre></div></div><p><img src="../../img/in-post/2020-9-14-mysql/assets2/1551408519889.png" alt="1551408519889"></p><h4 id="23-存储引擎的选择">2.3 存储引擎的选择</h4><p>​	在选择存储引擎时，应该根据应用系统的特点选择合适的存储引擎。对于复杂的应用系统，还可以根据实际情况选择多种存储引擎进行组合。以下是几种常用的存储引擎的使用环境。</p><ul><li>InnoDB : 是Mysql的默认存储引擎，用于事务处理应用程序，支持外键。如果应用对事务的完整性有比较高的要求，在并发条件下要求数据的一致性，数据操作除了插入和查询意外，还包含很多的更新、删除操作，那么InnoDB存储引擎是比较合适的选择。InnoDB存储引擎除了有效的降低由于删除和更新导致的锁定， 还可以确保事务的完整提交和回滚，对于类似于计费系统或者财务系统等对数据准确性要求比较高的系统，InnoDB是最合适的选择。</li><li>MyISAM ： 如果应用是以读操作和插入操作为主，只有很少的更新和删除操作，并且对事务的完整性、并发性要求不是很高，那么选择这个存储引擎是非常合适的。</li><li>MEMORY：将所有数据保存在RAM中，在需要快速定位记录和其他类似数据环境下，可以提供几块的访问。MEMORY的缺陷就是对表的大小有限制，太大的表无法缓存在内存中，其次是要确保表的数据可以恢复，数据库异常终止后表中的数据是可以恢复的。MEMORY表通常用于更新不太频繁的小表，用以快速得到访问结果。</li><li>MERGE：用于将一系列等同的MyISAM表以逻辑方式组合在一起，并作为一个对象引用他们。MERGE表的优点在于可以突破对单个MyISAM表的大小限制，并且通过将不同的表分布在多个磁盘上，可以有效的改善MERGE表的访问效率。这对于存储诸如数据仓储等VLDB环境十分合适。</li></ul><h3 id="3-优化sql步骤">3. 优化SQL步骤</h3><p>在应用的的开发过程中，由于初期数据量小，开发人员写 SQL 语句时更重视功能上的实现，但是当应用系统正式上线后，随着生产数据量的急剧增长，很多 SQL 语句开始逐渐显露出性能问题，对生产的影响也越来越大，此时这些有问题的 SQL 语句就成为整个系统性能的瓶颈，因此我们必须要对它们进行优化，本章将详细介绍在 MySQL 中优化 SQL 语句的方法。</p><p>当面对一个有 SQL 性能问题的数据库时，我们应该从何处入手来进行系统的分析，使得能够尽快定位问题 SQL 并尽快解决问题。</p><h4 id="31-查看sql执行频率">3.1 查看SQL执行频率</h4><table><tbody><tr><td>MySQL 客户端连接成功后，通过 show [session</td><td>global] status 命令可以提供服务器状态信息。show [session</td><td>global] status 可以根据需要加上参数“session”或者“global”来显示 session 级（当前连接）的计结果和 global 级（自数据库上次启动至今）的统计结果。如果不写，默认使用参数是“session”。</td></tr></tbody></table><p>下面的命令显示了当前 session 中所有统计参数的值：</p><div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+</pre></td><td class="rouge-code"><pre>show status like 'Com_______';
+</pre></td></tr></tbody></table></code></pre></div></div><p><img src="../../img/in-post/2020-9-14-mysql/assets2/1552487172501.png" alt="1552487172501"></p><div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+</pre></td><td class="rouge-code"><pre>show status like 'Innodb_rows_%';
+</pre></td></tr></tbody></table></code></pre></div></div><p><img src="../../img/in-post/2020-9-14-mysql/assets2/1552487245859.png" alt="1552487245859"></p><p>Com_xxx 表示每个 xxx 语句执行的次数，我们通常比较关心的是以下几个统计参数。</p><table><thead><tr><th style="text-align:left">参数</th><th>含义</th></tr></thead><tbody><tr><td style="text-align:left">Com_select</td><td>执行 select 操作的次数，一次查询只累加 1。</td></tr><tr><td style="text-align:left">Com_insert</td><td>执行 INSERT 操作的次数，对于批量插入的 INSERT 操作，只累加一次。</td></tr><tr><td style="text-align:left">Com_update</td><td>执行 UPDATE 操作的次数。</td></tr><tr><td style="text-align:left">Com_delete</td><td>执行 DELETE 操作的次数。</td></tr><tr><td style="text-align:left">Innodb_rows_read</td><td>select 查询返回的行数。</td></tr><tr><td style="text-align:left">Innodb_rows_inserted</td><td>执行 INSERT 操作插入的行数。</td></tr><tr><td style="text-align:left">Innodb_rows_updated</td><td>执行 UPDATE 操作更新的行数。</td></tr><tr><td style="text-align:left">Innodb_rows_deleted</td><td>执行 DELETE 操作删除的行数。</td></tr><tr><td style="text-align:left">Connections</td><td>试图连接 MySQL 服务器的次数。</td></tr><tr><td style="text-align:left">Uptime</td><td>服务器工作时间。</td></tr><tr><td style="text-align:left">Slow_queries</td><td>慢查询的次数。</td></tr></tbody></table><p>Com_*** : 这些参数对于所有存储引擎的表操作都会进行累计。</p><p>Innodb_*** : 这几个参数只是针对InnoDB 存储引擎的，累加的算法也略有不同。</p><h4 id="32-定位低效率执行sql">3.2 定位低效率执行SQL</h4><p>可以通过以下两种方式定位执行效率较低的 SQL 语句。</p><ul><li>慢查询日志 : 通过慢查询日志定位那些执行效率较低的 SQL 语句，用--log-slow-queries[=file_name]选项启动时，mysqld 写一个包含所有执行时间超过 long_query_time 秒的 SQL 语句的日志文件。具体可以查看本书第 26 章中日志管理的相关部分。</li><li>show processlist : 慢查询日志在查询结束以后才纪录，所以在应用反映执行效率出现问题的时候查询慢查询日志并不能定位问题，可以使用show processlist命令查看当前MySQL在进行的线程，包括线程的状态、是否锁表等，可以实时地查看 SQL 的执行情况，同时对一些锁表操作进行优化。</li></ul><p><img src="../../img/in-post/2020-9-14-mysql/assets2/1556098544349.png" alt="1556098544349"></p><div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+</pre></td><td class="rouge-code"><pre>1） id列，用户登录mysql时，系统分配的"connection_id"，可以使用函数connection_id()查看
+
+2） user列，显示当前用户。如果不是root，这个命令就只显示用户权限范围的sql语句
+
+3） host列，显示这个语句是从哪个ip的哪个端口上发的，可以用来跟踪出现问题语句的用户
+
+4） db列，显示这个进程目前连接的是哪个数据库
+
+5） command列，显示当前连接的执行的命令，一般取值为休眠（sleep），查询（query），连接（connect）等
+
+6） time列，显示这个状态持续的时间，单位是秒
+
+7） state列，显示使用当前连接的sql语句的状态，很重要的列。state描述的是语句执行中的某一个状态。一个sql语句，以查询为例，可能需要经过copying to tmp table、sorting result、sending data等状态才可以完成
+
+8） info列，显示这个sql语句，是判断问题语句的一个重要依据
+</pre></td></tr></tbody></table></code></pre></div></div><h4 id="33-explain分析执行计划">3.3 explain分析执行计划</h4><p>通过以上步骤查询到效率低的 SQL 语句后，可以通过 EXPLAIN或者 DESC命令获取 MySQL如何执行 SELECT 语句的信息，包括在 SELECT 语句执行过程中表如何连接和连接的顺序。</p><p>查询SQL语句的执行计划 ：</p><div class="language-sql highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+</pre></td><td class="rouge-code"><pre><span class="k">explain</span>  <span class="k">select</span> <span class="o">*</span> <span class="k">from</span> <span class="n">tb_item</span> <span class="k">where</span> <span class="n">id</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+</pre></td></tr></tbody></table></code></pre></div></div><p><img src="../../img/in-post/2020-9-14-mysql/assets2/1552487489859.png" alt="1552487489859"></p><div class="language-sql highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+</pre></td><td class="rouge-code"><pre><span class="k">explain</span>  <span class="k">select</span> <span class="o">*</span> <span class="k">from</span> <span class="n">tb_item</span> <span class="k">where</span> <span class="n">title</span> <span class="o">=</span> <span class="s1">'阿尔卡特 (OT-979) 冰川白 联通3G手机3'</span><span class="p">;</span>
+</pre></td></tr></tbody></table></code></pre></div></div><p><img src="../../img/in-post/2020-9-14-mysql/assets2/1552487526919.png" alt="1552487526919"></p><table><thead><tr><th>字段</th><th>含义</th></tr></thead><tbody><tr><td>id</td><td>select查询的序列号，是一组数字，表示的是查询中执行select子句或者是操作表的顺序。</td></tr><tr><td>select_type</td><td>表示 SELECT 的类型，常见的取值有 SIMPLE（简单表，即不使用表连接或者子查询）、PRIMARY（主查询，即外层的查询）、UNION（UNION 中的第二个或者后面的查询语句）、SUBQUERY（子查询中的第一个 SELECT）等</td></tr><tr><td>table</td><td>输出结果集的表</td></tr><tr><td>type</td><td>表示表的连接类型，性能由好到差的连接类型为( system ---&gt; const -----&gt; eq_ref ------&gt; ref -------&gt; ref_or_null----&gt; index_merge ---&gt; index_subquery -----&gt; range -----&gt; index ------&gt; all )</td></tr><tr><td>possible_keys</td><td>表示查询时，可能使用的索引</td></tr><tr><td>key</td><td>表示实际使用的索引</td></tr><tr><td>key_len</td><td>索引字段的长度</td></tr><tr><td>rows</td><td>扫描行的数量</td></tr><tr><td>extra</td><td>执行情况的说明和描述</td></tr></tbody></table><h5 id="331-环境准备">3.3.1 环境准备</h5><p><img src="../../img/in-post/2020-9-14-mysql/assets2/1556122799330.png" alt="1556122799330"></p><div class="language-sql highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+51
+52
+53
+</pre></td><td class="rouge-code"><pre><span class="k">CREATE</span> <span class="k">TABLE</span> <span class="nv">`t_role`</span> <span class="p">(</span>
+  <span class="nv">`id`</span> <span class="nb">varchar</span><span class="p">(</span><span class="mi">32</span><span class="p">)</span> <span class="k">NOT</span> <span class="k">NULL</span><span class="p">,</span>
+  <span class="nv">`role_name`</span> <span class="nb">varchar</span><span class="p">(</span><span class="mi">255</span><span class="p">)</span> <span class="k">DEFAULT</span> <span class="k">NULL</span><span class="p">,</span>
+  <span class="nv">`role_code`</span> <span class="nb">varchar</span><span class="p">(</span><span class="mi">255</span><span class="p">)</span> <span class="k">DEFAULT</span> <span class="k">NULL</span><span class="p">,</span>
+  <span class="nv">`description`</span> <span class="nb">varchar</span><span class="p">(</span><span class="mi">255</span><span class="p">)</span> <span class="k">DEFAULT</span> <span class="k">NULL</span><span class="p">,</span>
+  <span class="k">PRIMARY</span> <span class="k">KEY</span> <span class="p">(</span><span class="nv">`id`</span><span class="p">),</span>
+  <span class="k">UNIQUE</span> <span class="k">KEY</span> <span class="nv">`unique_role_name`</span> <span class="p">(</span><span class="nv">`role_name`</span><span class="p">)</span>
+<span class="p">)</span> <span class="n">ENGINE</span><span class="o">=</span><span class="n">InnoDB</span> <span class="k">DEFAULT</span> <span class="n">CHARSET</span><span class="o">=</span><span class="n">utf8</span><span class="p">;</span>
+
+
+<span class="k">CREATE</span> <span class="k">TABLE</span> <span class="nv">`t_user`</span> <span class="p">(</span>
+  <span class="nv">`id`</span> <span class="nb">varchar</span><span class="p">(</span><span class="mi">32</span><span class="p">)</span> <span class="k">NOT</span> <span class="k">NULL</span><span class="p">,</span>
+  <span class="nv">`username`</span> <span class="nb">varchar</span><span class="p">(</span><span class="mi">45</span><span class="p">)</span> <span class="k">NOT</span> <span class="k">NULL</span><span class="p">,</span>
+  <span class="nv">`password`</span> <span class="nb">varchar</span><span class="p">(</span><span class="mi">96</span><span class="p">)</span> <span class="k">NOT</span> <span class="k">NULL</span><span class="p">,</span>
+  <span class="nv">`name`</span> <span class="nb">varchar</span><span class="p">(</span><span class="mi">45</span><span class="p">)</span> <span class="k">NOT</span> <span class="k">NULL</span><span class="p">,</span>
+  <span class="k">PRIMARY</span> <span class="k">KEY</span> <span class="p">(</span><span class="nv">`id`</span><span class="p">),</span>
+  <span class="k">UNIQUE</span> <span class="k">KEY</span> <span class="nv">`unique_user_username`</span> <span class="p">(</span><span class="nv">`username`</span><span class="p">)</span>
+<span class="p">)</span> <span class="n">ENGINE</span><span class="o">=</span><span class="n">InnoDB</span> <span class="k">DEFAULT</span> <span class="n">CHARSET</span><span class="o">=</span><span class="n">utf8</span><span class="p">;</span>
+
+
+<span class="k">CREATE</span> <span class="k">TABLE</span> <span class="nv">`user_role`</span> <span class="p">(</span>
+  <span class="nv">`id`</span> <span class="nb">int</span><span class="p">(</span><span class="mi">11</span><span class="p">)</span> <span class="k">NOT</span> <span class="k">NULL</span> <span class="n">auto_increment</span> <span class="p">,</span>
+  <span class="nv">`user_id`</span> <span class="nb">varchar</span><span class="p">(</span><span class="mi">32</span><span class="p">)</span> <span class="k">DEFAULT</span> <span class="k">NULL</span><span class="p">,</span>
+  <span class="nv">`role_id`</span> <span class="nb">varchar</span><span class="p">(</span><span class="mi">32</span><span class="p">)</span> <span class="k">DEFAULT</span> <span class="k">NULL</span><span class="p">,</span>
+  <span class="k">PRIMARY</span> <span class="k">KEY</span> <span class="p">(</span><span class="nv">`id`</span><span class="p">),</span>
+  <span class="k">KEY</span> <span class="nv">`fk_ur_user_id`</span> <span class="p">(</span><span class="nv">`user_id`</span><span class="p">),</span>
+  <span class="k">KEY</span> <span class="nv">`fk_ur_role_id`</span> <span class="p">(</span><span class="nv">`role_id`</span><span class="p">),</span>
+  <span class="k">CONSTRAINT</span> <span class="nv">`fk_ur_role_id`</span> <span class="k">FOREIGN</span> <span class="k">KEY</span> <span class="p">(</span><span class="nv">`role_id`</span><span class="p">)</span> <span class="k">REFERENCES</span> <span class="nv">`t_role`</span> <span class="p">(</span><span class="nv">`id`</span><span class="p">)</span> <span class="k">ON</span> <span class="k">DELETE</span> <span class="k">NO</span> <span class="n">ACTION</span> <span class="k">ON</span> <span class="k">UPDATE</span> <span class="k">NO</span> <span class="n">ACTION</span><span class="p">,</span>
+  <span class="k">CONSTRAINT</span> <span class="nv">`fk_ur_user_id`</span> <span class="k">FOREIGN</span> <span class="k">KEY</span> <span class="p">(</span><span class="nv">`user_id`</span><span class="p">)</span> <span class="k">REFERENCES</span> <span class="nv">`t_user`</span> <span class="p">(</span><span class="nv">`id`</span><span class="p">)</span> <span class="k">ON</span> <span class="k">DELETE</span> <span class="k">NO</span> <span class="n">ACTION</span> <span class="k">ON</span> <span class="k">UPDATE</span> <span class="k">NO</span> <span class="n">ACTION</span>
+<span class="p">)</span> <span class="n">ENGINE</span><span class="o">=</span><span class="n">InnoDB</span> <span class="k">DEFAULT</span> <span class="n">CHARSET</span><span class="o">=</span><span class="n">utf8</span><span class="p">;</span>
+
+
+
+
+<span class="k">insert</span> <span class="k">into</span> <span class="nv">`t_user`</span> <span class="p">(</span><span class="nv">`id`</span><span class="p">,</span> <span class="nv">`username`</span><span class="p">,</span> <span class="nv">`password`</span><span class="p">,</span> <span class="nv">`name`</span><span class="p">)</span> <span class="k">values</span><span class="p">(</span><span class="s1">'1'</span><span class="p">,</span><span class="s1">'super'</span><span class="p">,</span><span class="s1">'$2a$10$TJ4TmCdK.X4wv/tCqHW14.w70U3CC33CeVncD3SLmyMXMknstqKRe'</span><span class="p">,</span><span class="s1">'超级管理员'</span><span class="p">);</span>
+<span class="k">insert</span> <span class="k">into</span> <span class="nv">`t_user`</span> <span class="p">(</span><span class="nv">`id`</span><span class="p">,</span> <span class="nv">`username`</span><span class="p">,</span> <span class="nv">`password`</span><span class="p">,</span> <span class="nv">`name`</span><span class="p">)</span> <span class="k">values</span><span class="p">(</span><span class="s1">'2'</span><span class="p">,</span><span class="s1">'admin'</span><span class="p">,</span><span class="s1">'$2a$10$TJ4TmCdK.X4wv/tCqHW14.w70U3CC33CeVncD3SLmyMXMknstqKRe'</span><span class="p">,</span><span class="s1">'系统管理员'</span><span class="p">);</span>
+<span class="k">insert</span> <span class="k">into</span> <span class="nv">`t_user`</span> <span class="p">(</span><span class="nv">`id`</span><span class="p">,</span> <span class="nv">`username`</span><span class="p">,</span> <span class="nv">`password`</span><span class="p">,</span> <span class="nv">`name`</span><span class="p">)</span> <span class="k">values</span><span class="p">(</span><span class="s1">'3'</span><span class="p">,</span><span class="s1">'itcast'</span><span class="p">,</span><span class="s1">'$2a$10$8qmaHgUFUAmPR5pOuWhYWOr291WJYjHelUlYn07k5ELF8ZCrW0Cui'</span><span class="p">,</span><span class="s1">'test02'</span><span class="p">);</span>
+<span class="k">insert</span> <span class="k">into</span> <span class="nv">`t_user`</span> <span class="p">(</span><span class="nv">`id`</span><span class="p">,</span> <span class="nv">`username`</span><span class="p">,</span> <span class="nv">`password`</span><span class="p">,</span> <span class="nv">`name`</span><span class="p">)</span> <span class="k">values</span><span class="p">(</span><span class="s1">'4'</span><span class="p">,</span><span class="s1">'stu1'</span><span class="p">,</span><span class="s1">'$2a$10$pLtt2KDAFpwTWLjNsmTEi.oU1yOZyIn9XkziK/y/spH5rftCpUMZa'</span><span class="p">,</span><span class="s1">'学生1'</span><span class="p">);</span>
+<span class="k">insert</span> <span class="k">into</span> <span class="nv">`t_user`</span> <span class="p">(</span><span class="nv">`id`</span><span class="p">,</span> <span class="nv">`username`</span><span class="p">,</span> <span class="nv">`password`</span><span class="p">,</span> <span class="nv">`name`</span><span class="p">)</span> <span class="k">values</span><span class="p">(</span><span class="s1">'5'</span><span class="p">,</span><span class="s1">'stu2'</span><span class="p">,</span><span class="s1">'$2a$10$nxPKkYSez7uz2YQYUnwhR.z57km3yqKn3Hr/p1FR6ZKgc18u.Tvqm'</span><span class="p">,</span><span class="s1">'学生2'</span><span class="p">);</span>
+<span class="k">insert</span> <span class="k">into</span> <span class="nv">`t_user`</span> <span class="p">(</span><span class="nv">`id`</span><span class="p">,</span> <span class="nv">`username`</span><span class="p">,</span> <span class="nv">`password`</span><span class="p">,</span> <span class="nv">`name`</span><span class="p">)</span> <span class="k">values</span><span class="p">(</span><span class="s1">'6'</span><span class="p">,</span><span class="s1">'t1'</span><span class="p">,</span><span class="s1">'$2a$10$TJ4TmCdK.X4wv/tCqHW14.w70U3CC33CeVncD3SLmyMXMknstqKRe'</span><span class="p">,</span><span class="s1">'老师1'</span><span class="p">);</span>
+
+
+
+<span class="k">INSERT</span> <span class="k">INTO</span> <span class="nv">`t_role`</span> <span class="p">(</span><span class="nv">`id`</span><span class="p">,</span> <span class="nv">`role_name`</span><span class="p">,</span> <span class="nv">`role_code`</span><span class="p">,</span> <span class="nv">`description`</span><span class="p">)</span> <span class="k">VALUES</span><span class="p">(</span><span class="s1">'5'</span><span class="p">,</span><span class="s1">'学生'</span><span class="p">,</span><span class="s1">'student'</span><span class="p">,</span><span class="s1">'学生'</span><span class="p">);</span>
+<span class="k">INSERT</span> <span class="k">INTO</span> <span class="nv">`t_role`</span> <span class="p">(</span><span class="nv">`id`</span><span class="p">,</span> <span class="nv">`role_name`</span><span class="p">,</span> <span class="nv">`role_code`</span><span class="p">,</span> <span class="nv">`description`</span><span class="p">)</span> <span class="k">VALUES</span><span class="p">(</span><span class="s1">'7'</span><span class="p">,</span><span class="s1">'老师'</span><span class="p">,</span><span class="s1">'teacher'</span><span class="p">,</span><span class="s1">'老师'</span><span class="p">);</span>
+<span class="k">INSERT</span> <span class="k">INTO</span> <span class="nv">`t_role`</span> <span class="p">(</span><span class="nv">`id`</span><span class="p">,</span> <span class="nv">`role_name`</span><span class="p">,</span> <span class="nv">`role_code`</span><span class="p">,</span> <span class="nv">`description`</span><span class="p">)</span> <span class="k">VALUES</span><span class="p">(</span><span class="s1">'8'</span><span class="p">,</span><span class="s1">'教学管理员'</span><span class="p">,</span><span class="s1">'teachmanager'</span><span class="p">,</span><span class="s1">'教学管理员'</span><span class="p">);</span>
+<span class="k">INSERT</span> <span class="k">INTO</span> <span class="nv">`t_role`</span> <span class="p">(</span><span class="nv">`id`</span><span class="p">,</span> <span class="nv">`role_name`</span><span class="p">,</span> <span class="nv">`role_code`</span><span class="p">,</span> <span class="nv">`description`</span><span class="p">)</span> <span class="k">VALUES</span><span class="p">(</span><span class="s1">'9'</span><span class="p">,</span><span class="s1">'管理员'</span><span class="p">,</span><span class="s1">'admin'</span><span class="p">,</span><span class="s1">'管理员'</span><span class="p">);</span>
+<span class="k">INSERT</span> <span class="k">INTO</span> <span class="nv">`t_role`</span> <span class="p">(</span><span class="nv">`id`</span><span class="p">,</span> <span class="nv">`role_name`</span><span class="p">,</span> <span class="nv">`role_code`</span><span class="p">,</span> <span class="nv">`description`</span><span class="p">)</span> <span class="k">VALUES</span><span class="p">(</span><span class="s1">'10'</span><span class="p">,</span><span class="s1">'超级管理员'</span><span class="p">,</span><span class="s1">'super'</span><span class="p">,</span><span class="s1">'超级管理员'</span><span class="p">);</span>
+
+
+<span class="k">INSERT</span> <span class="k">INTO</span> <span class="n">user_role</span><span class="p">(</span><span class="n">id</span><span class="p">,</span><span class="n">user_id</span><span class="p">,</span><span class="n">role_id</span><span class="p">)</span> <span class="k">VALUES</span><span class="p">(</span><span class="k">NULL</span><span class="p">,</span> <span class="s1">'1'</span><span class="p">,</span> <span class="s1">'5'</span><span class="p">),(</span><span class="k">NULL</span><span class="p">,</span> <span class="s1">'1'</span><span class="p">,</span> <span class="s1">'7'</span><span class="p">),(</span><span class="k">NULL</span><span class="p">,</span> <span class="s1">'2'</span><span class="p">,</span> <span class="s1">'8'</span><span class="p">),(</span><span class="k">NULL</span><span class="p">,</span> <span class="s1">'3'</span><span class="p">,</span> <span class="s1">'9'</span><span class="p">),(</span><span class="k">NULL</span><span class="p">,</span> <span class="s1">'4'</span><span class="p">,</span> <span class="s1">'8'</span><span class="p">),(</span><span class="k">NULL</span><span class="p">,</span> <span class="s1">'5'</span><span class="p">,</span> <span class="s1">'10'</span><span class="p">)</span> <span class="p">;</span>
+
+
+</pre></td></tr></tbody></table></code></pre></div></div><h5 id="332-explain-之-id">3.3.2 explain 之 id</h5><p>id 字段是 select查询的序列号，是一组数字，表示的是查询中执行select子句或者是操作表的顺序。id 情况有三种 ：</p><p>1） id 相同表示加载表的顺序是从上到下。</p><div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+</pre></td><td class="rouge-code"><pre>explain select * from t_role r, t_user u, user_role ur where r.id = ur.role_id and u.id = ur.user_id ;
+</pre></td></tr></tbody></table></code></pre></div></div><p><img src="../../img/in-post/2020-9-14-mysql/assets2/1556102471304.png" alt="1556102471304"></p><p>2） id 不同id值越大，优先级越高，越先被执行。</p><pre><code class="language-SQL">EXPLAIN SELECT * FROM t_role WHERE id = (SELECT role_id FROM user_role WHERE user_id = (SELECT id FROM t_user WHERE username = 'stu1'))
+</code></pre><p><img src="../../img/in-post/2020-9-14-mysql/assets2/1556103009534.png" alt="1556103009534"></p><p>3） id 有相同，也有不同，同时存在。id相同的可以认为是一组，从上往下顺序执行；在所有的组中，id的值越大，优先级越高，越先执行。</p><div class="language-sql highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+</pre></td><td class="rouge-code"><pre><span class="k">EXPLAIN</span> <span class="k">SELECT</span> <span class="o">*</span> <span class="k">FROM</span> <span class="n">t_role</span> <span class="n">r</span> <span class="p">,</span> <span class="p">(</span><span class="k">SELECT</span> <span class="o">*</span> <span class="k">FROM</span> <span class="n">user_role</span> <span class="n">ur</span> <span class="k">WHERE</span> <span class="n">ur</span><span class="p">.</span><span class="nv">`user_id`</span> <span class="o">=</span> <span class="s1">'2'</span><span class="p">)</span> <span class="n">a</span> <span class="k">WHERE</span> <span class="n">r</span><span class="p">.</span><span class="n">id</span> <span class="o">=</span> <span class="n">a</span><span class="p">.</span><span class="n">role_id</span> <span class="p">;</span> 
+</pre></td></tr></tbody></table></code></pre></div></div><p><img src="../../img/in-post/2020-9-14-mysql/assets2/1556103294182.png" alt="1556103294182"></p><h5 id="333-explain-之-select_type">3.3.3 explain 之 select_type</h5><p>表示 SELECT 的类型，常见的取值，如下表所示：</p><table><thead><tr><th>select_type</th><th>含义</th></tr></thead><tbody><tr><td>SIMPLE</td><td>简单的select查询，查询中不包含子查询或者UNION</td></tr><tr><td>PRIMARY</td><td>查询中若包含任何复杂的子查询，最外层查询标记为该标识</td></tr><tr><td>SUBQUERY</td><td>在SELECT 或 WHERE 列表中包含了子查询</td></tr><tr><td>DERIVED</td><td>在FROM 列表中包含的子查询，被标记为 DERIVED（衍生） MYSQL会递归执行这些子查询，把结果放在临时表中</td></tr><tr><td>UNION</td><td>若第二个SELECT出现在UNION之后，则标记为UNION ； 若UNION包含在FROM子句的子查询中，外层SELECT将被标记为 ： DERIVED</td></tr><tr><td>UNION RESULT</td><td>从UNION表获取结果的SELECT</td></tr></tbody></table><h5 id="334-explain-之-table">3.3.4 explain 之 table</h5><p>展示这一行的数据是关于哪一张表的</p><h5 id="335-explain-之-type">3.3.5 explain 之 type</h5><p>type 显示的是访问类型，是较为重要的一个指标，可取值为：</p><table><thead><tr><th>type</th><th>含义</th></tr></thead><tbody><tr><td>NULL</td><td>MySQL不访问任何表，索引，直接返回结果</td></tr><tr><td>system</td><td>表只有一行记录(等于系统表)，这是const类型的特例，一般不会出现</td></tr><tr><td>const</td><td>表示通过索引一次就找到了，const 用于比较primary key 或者 unique 索引。因为只匹配一行数据，所以很快。如将主键置于where列表中，MySQL 就能将该查询转换为一个常亮。const于将 “主键” 或 “唯一” 索引的所有部分与常量值进行比较</td></tr><tr><td>eq_ref</td><td>类似ref，区别在于使用的是唯一索引，使用主键的关联查询，关联查询出的记录只有一条。常见于主键或唯一索引扫描</td></tr><tr><td>ref</td><td>非唯一性索引扫描，返回匹配某个单独值的所有行。本质上也是一种索引访问，返回所有匹配某个单独值的所有行（多个）</td></tr><tr><td>range</td><td>只检索给定返回的行，使用一个索引来选择行。 where 之后出现 between ， &lt; , &gt; , in 等操作。</td></tr><tr><td>index</td><td>index 与 ALL的区别为 index 类型只是遍历了索引树， 通常比ALL 快， ALL 是遍历数据文件。</td></tr><tr><td>all</td><td>将遍历全表以找到匹配的行</td></tr></tbody></table><p>结果值从最好到最坏以此是：</p><div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+</pre></td><td class="rouge-code"><pre>NULL &gt; system &gt; const &gt; eq_ref &gt; ref &gt; fulltext &gt; ref_or_null &gt; index_merge &gt; unique_subquery &gt; index_subquery &gt; range &gt; index &gt; ALL
+
+
+system &gt; const &gt; eq_ref &gt; ref &gt; range &gt; index &gt; ALL
+</pre></td></tr></tbody></table></code></pre></div></div><p>==一般来说， 我们需要保证查询至少达到 range 级别， 最好达到ref 。==</p><h5 id="336-explain-之--key">3.3.6 explain 之 key</h5><div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+</pre></td><td class="rouge-code"><pre>possible_keys : 显示可能应用在这张表的索引， 一个或多个。 
+
+key ： 实际使用的索引， 如果为NULL， 则没有使用索引。
+
+key_len : 表示索引中使用的字节数， 该值为索引字段最大可能长度，并非实际使用长度，在不损失精确性的前提下， 长度越短越好 。
+</pre></td></tr></tbody></table></code></pre></div></div><h5 id="337-explain-之-rows">3.3.7 explain 之 rows</h5><p>扫描行的数量。</p><h5 id="338-explain-之-extra">3.3.8 explain 之 extra</h5><p>其他的额外的执行计划信息，在该列展示 。</p><table><thead><tr><th>extra</th><th>含义</th></tr></thead><tbody><tr><td>using filesort</td><td>说明mysql会对数据使用一个外部的索引排序，而不是按照表内的索引顺序进行读取， 称为 “文件排序”, 效率低。</td></tr><tr><td>using temporary</td><td>使用了临时表保存中间结果，MySQL在对查询结果排序时使用临时表。常见于 order by 和 group by； 效率低</td></tr><tr><td>using index</td><td>表示相应的select操作使用了覆盖索引， 避免访问表的数据行， 效率不错。</td></tr></tbody></table><h4 id="34-show-profile分析sql">3.4 show profile分析SQL</h4><p>Mysql从5.0.37版本开始增加了对 show profiles 和 show profile 语句的支持。show profiles 能够在做SQL优化时帮助我们了解时间都耗费到哪里去了。</p><p>通过 have_profiling 参数，能够看到当前MySQL是否支持profile：</p><p><img src="../../img/in-post/2020-9-14-mysql/assets2/1552488401999.png" alt="1552488401999"></p><p>默认profiling是关闭的，可以通过set语句在Session级别开启profiling：</p><p><img src="../../img/in-post/2020-9-14-mysql/assets2/1552488372405.png" alt="1552488372405"></p><div class="language-sql highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+</pre></td><td class="rouge-code"><pre><span class="k">set</span> <span class="n">profiling</span><span class="o">=</span><span class="mi">1</span><span class="p">;</span> <span class="o">//</span><span class="err">开启</span><span class="n">profiling</span> <span class="err">开关；</span>
+</pre></td></tr></tbody></table></code></pre></div></div><p>通过profile，我们能够更清楚地了解SQL执行的过程。</p><p>首先，我们可以执行一系列的操作，如下图所示：</p><div class="language-sql highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+</pre></td><td class="rouge-code"><pre><span class="k">show</span> <span class="n">databases</span><span class="p">;</span>
+
+<span class="n">use</span> <span class="n">db01</span><span class="p">;</span>
+
+<span class="k">show</span> <span class="n">tables</span><span class="p">;</span>
+
+<span class="k">select</span> <span class="o">*</span> <span class="k">from</span> <span class="n">tb_item</span> <span class="k">where</span> <span class="n">id</span> <span class="o">&lt;</span> <span class="mi">5</span><span class="p">;</span>
+
+<span class="k">select</span> <span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span> <span class="k">from</span> <span class="n">tb_item</span><span class="p">;</span>
+</pre></td></tr></tbody></table></code></pre></div></div><p>执行完上述命令之后，再执行show profiles 指令， 来查看SQL语句执行的耗时：</p><p><img src="../../img/in-post/2020-9-14-mysql/assets2/1552489017940.png" alt="1552489017940"></p><p>通过show profile for query query_id 语句可以查看到该SQL执行过程中每个线程的状态和消耗的时间：</p><p><img src="../../img/in-post/2020-9-14-mysql/assets2/1552489053763.png" alt="1552489053763"></p><div class="language-tex highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+</pre></td><td class="rouge-code"><pre>TIP ：
+	Sending data 状态表示MySQL线程开始访问数据行并把结果返回给客户端，而不仅仅是返回个客户端。由于在Sending data状态下，MySQL线程往往需要做大量的磁盘读取操作，所以经常是整各查询中耗时最长的状态。
+</pre></td></tr></tbody></table></code></pre></div></div><p>在获取到最消耗时间的线程状态后，MySQL支持进一步选择all、cpu、block io 、context switch、page faults等明细类型类查看MySQL在使用什么资源上耗费了过高的时间。例如，选择查看CPU的耗费时间 ：</p><p><img src="../../img/in-post/2020-9-14-mysql/assets2/1552489671119.png" alt="1552489671119"></p><table><thead><tr><th>字段</th><th>含义</th></tr></thead><tbody><tr><td>Status</td><td>sql 语句执行的状态</td></tr><tr><td>Duration</td><td>sql 执行过程中每一个步骤的耗时</td></tr><tr><td>CPU_user</td><td>当前用户占有的cpu</td></tr><tr><td>CPU_system</td><td>系统占有的cpu</td></tr></tbody></table><h4 id="35-trace分析优化器执行计划">3.5 trace分析优化器执行计划</h4><p>MySQL5.6提供了对SQL的跟踪trace, 通过trace文件能够进一步了解为什么优化器选择A计划, 而不是选择B计划。</p><p>打开trace ， 设置格式为 JSON，并设置trace最大能够使用的内存大小，避免解析过程中因为默认内存过小而不能够完整展示。</p><div class="language-sql highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+</pre></td><td class="rouge-code"><pre><span class="k">SET</span> <span class="n">optimizer_trace</span><span class="o">=</span><span class="nv">"enabled=on"</span><span class="p">,</span><span class="n">end_markers_in_json</span><span class="o">=</span><span class="k">on</span><span class="p">;</span>
+<span class="k">set</span> <span class="n">optimizer_trace_max_mem_size</span><span class="o">=</span><span class="mi">1000000</span><span class="p">;</span>
+</pre></td></tr></tbody></table></code></pre></div></div><p>执行SQL语句 ：</p><div class="language-sql highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+</pre></td><td class="rouge-code"><pre><span class="k">select</span> <span class="o">*</span> <span class="k">from</span> <span class="n">tb_item</span> <span class="k">where</span> <span class="n">id</span> <span class="o">&lt;</span> <span class="mi">4</span><span class="p">;</span>
+</pre></td></tr></tbody></table></code></pre></div></div><p>最后， 检查information_schema.optimizer_trace就可以知道MySQL是如何执行SQL的 ：</p><div class="language-sql highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+</pre></td><td class="rouge-code"><pre><span class="k">select</span> <span class="o">*</span> <span class="k">from</span> <span class="n">information_schema</span><span class="p">.</span><span class="n">optimizer_trace</span><span class="err">\</span><span class="k">G</span><span class="p">;</span>
+</pre></td></tr></tbody></table></code></pre></div></div><div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+51
+52
+53
+54
+55
+56
+57
+58
+59
+60
+61
+62
+63
+64
+65
+66
+67
+68
+69
+70
+71
+72
+73
+74
+75
+76
+77
+78
+79
+80
+81
+82
+83
+84
+85
+86
+87
+88
+89
+90
+91
+92
+93
+94
+95
+96
+97
+98
+99
+100
+101
+102
+103
+104
+105
+106
+107
+108
+109
+110
+111
+112
+113
+114
+115
+116
+117
+118
+119
+120
+121
+122
+123
+124
+125
+126
+127
+128
+129
+130
+131
+132
+133
+134
+135
+136
+137
+138
+139
+140
+141
+142
+143
+144
+145
+146
+147
+148
+149
+150
+151
+152
+153
+154
+155
+156
+157
+158
+159
+160
+161
+162
+163
+164
+165
+166
+167
+168
+169
+170
+</pre></td><td class="rouge-code"><pre><span class="err">***************************</span><span class="w"> </span><span class="mi">1</span><span class="err">.</span><span class="w"> </span><span class="err">row</span><span class="w"> </span><span class="err">***************************</span><span class="w">
+</span><span class="err">QUERY:</span><span class="w"> </span><span class="err">select</span><span class="w"> </span><span class="err">*</span><span class="w"> </span><span class="err">from</span><span class="w"> </span><span class="err">tb_item</span><span class="w"> </span><span class="err">where</span><span class="w"> </span><span class="err">id</span><span class="w"> </span><span class="err">&lt;</span><span class="w"> </span><span class="mi">4</span><span class="w">
+</span><span class="err">TRACE:</span><span class="w"> </span><span class="p">{</span><span class="w">
+  </span><span class="nl">"steps"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+    </span><span class="p">{</span><span class="w">
+      </span><span class="nl">"join_preparation"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+        </span><span class="nl">"select#"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w">
+        </span><span class="nl">"steps"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+          </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"expanded_query"</span><span class="p">:</span><span class="w"> </span><span class="s2">"/* select#1 */ select `tb_item`.`id` AS `id`,`tb_item`.`title` AS `title`,`tb_item`.`price` AS `price`,`tb_item`.`num` AS `num`,`tb_item`.`categoryid` AS `categoryid`,`tb_item`.`status` AS `status`,`tb_item`.`sellerid` AS `sellerid`,`tb_item`.`createtime` AS `createtime`,`tb_item`.`updatetime` AS `updatetime` from `tb_item` where (`tb_item`.`id` &lt; 4)"</span><span class="w">
+          </span><span class="p">}</span><span class="w">
+        </span><span class="p">]</span><span class="w"> </span><span class="err">/*</span><span class="w"> </span><span class="err">steps</span><span class="w"> </span><span class="err">*/</span><span class="w">
+      </span><span class="p">}</span><span class="w"> </span><span class="err">/*</span><span class="w"> </span><span class="err">join_preparation</span><span class="w"> </span><span class="err">*/</span><span class="w">
+    </span><span class="p">},</span><span class="w">
+    </span><span class="p">{</span><span class="w">
+      </span><span class="nl">"join_optimization"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+        </span><span class="nl">"select#"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w">
+        </span><span class="nl">"steps"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+          </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"condition_processing"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+              </span><span class="nl">"condition"</span><span class="p">:</span><span class="w"> </span><span class="s2">"WHERE"</span><span class="p">,</span><span class="w">
+              </span><span class="nl">"original_condition"</span><span class="p">:</span><span class="w"> </span><span class="s2">"(`tb_item`.`id` &lt; 4)"</span><span class="p">,</span><span class="w">
+              </span><span class="nl">"steps"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+                </span><span class="p">{</span><span class="w">
+                  </span><span class="nl">"transformation"</span><span class="p">:</span><span class="w"> </span><span class="s2">"equality_propagation"</span><span class="p">,</span><span class="w">
+                  </span><span class="nl">"resulting_condition"</span><span class="p">:</span><span class="w"> </span><span class="s2">"(`tb_item`.`id` &lt; 4)"</span><span class="w">
+                </span><span class="p">},</span><span class="w">
+                </span><span class="p">{</span><span class="w">
+                  </span><span class="nl">"transformation"</span><span class="p">:</span><span class="w"> </span><span class="s2">"constant_propagation"</span><span class="p">,</span><span class="w">
+                  </span><span class="nl">"resulting_condition"</span><span class="p">:</span><span class="w"> </span><span class="s2">"(`tb_item`.`id` &lt; 4)"</span><span class="w">
+                </span><span class="p">},</span><span class="w">
+                </span><span class="p">{</span><span class="w">
+                  </span><span class="nl">"transformation"</span><span class="p">:</span><span class="w"> </span><span class="s2">"trivial_condition_removal"</span><span class="p">,</span><span class="w">
+                  </span><span class="nl">"resulting_condition"</span><span class="p">:</span><span class="w"> </span><span class="s2">"(`tb_item`.`id` &lt; 4)"</span><span class="w">
+                </span><span class="p">}</span><span class="w">
+              </span><span class="p">]</span><span class="w"> </span><span class="err">/*</span><span class="w"> </span><span class="err">steps</span><span class="w"> </span><span class="err">*/</span><span class="w">
+            </span><span class="p">}</span><span class="w"> </span><span class="err">/*</span><span class="w"> </span><span class="err">condition_processing</span><span class="w"> </span><span class="err">*/</span><span class="w">
+          </span><span class="p">},</span><span class="w">
+          </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"table_dependencies"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+              </span><span class="p">{</span><span class="w">
+                </span><span class="nl">"table"</span><span class="p">:</span><span class="w"> </span><span class="s2">"`tb_item`"</span><span class="p">,</span><span class="w">
+                </span><span class="nl">"row_may_be_null"</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="p">,</span><span class="w">
+                </span><span class="nl">"map_bit"</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w">
+                </span><span class="nl">"depends_on_map_bits"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+                </span><span class="p">]</span><span class="w"> </span><span class="err">/*</span><span class="w"> </span><span class="err">depends_on_map_bits</span><span class="w"> </span><span class="err">*/</span><span class="w">
+              </span><span class="p">}</span><span class="w">
+            </span><span class="p">]</span><span class="w"> </span><span class="err">/*</span><span class="w"> </span><span class="err">table_dependencies</span><span class="w"> </span><span class="err">*/</span><span class="w">
+          </span><span class="p">},</span><span class="w">
+          </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"ref_optimizer_key_uses"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+            </span><span class="p">]</span><span class="w"> </span><span class="err">/*</span><span class="w"> </span><span class="err">ref_optimizer_key_uses</span><span class="w"> </span><span class="err">*/</span><span class="w">
+          </span><span class="p">},</span><span class="w">
+          </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"rows_estimation"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+              </span><span class="p">{</span><span class="w">
+                </span><span class="nl">"table"</span><span class="p">:</span><span class="w"> </span><span class="s2">"`tb_item`"</span><span class="p">,</span><span class="w">
+                </span><span class="nl">"range_analysis"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+                  </span><span class="nl">"table_scan"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+                    </span><span class="nl">"rows"</span><span class="p">:</span><span class="w"> </span><span class="mi">9816098</span><span class="p">,</span><span class="w">
+                    </span><span class="nl">"cost"</span><span class="p">:</span><span class="w"> </span><span class="mf">2.04e6</span><span class="w">
+                  </span><span class="p">}</span><span class="w"> </span><span class="err">/*</span><span class="w"> </span><span class="err">table_scan</span><span class="w"> </span><span class="err">*/</span><span class="p">,</span><span class="w">
+                  </span><span class="nl">"potential_range_indices"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+                    </span><span class="p">{</span><span class="w">
+                      </span><span class="nl">"index"</span><span class="p">:</span><span class="w"> </span><span class="s2">"PRIMARY"</span><span class="p">,</span><span class="w">
+                      </span><span class="nl">"usable"</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span><span class="w">
+                      </span><span class="nl">"key_parts"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+                        </span><span class="s2">"id"</span><span class="w">
+                      </span><span class="p">]</span><span class="w"> </span><span class="err">/*</span><span class="w"> </span><span class="err">key_parts</span><span class="w"> </span><span class="err">*/</span><span class="w">
+                    </span><span class="p">}</span><span class="w">
+                  </span><span class="p">]</span><span class="w"> </span><span class="err">/*</span><span class="w"> </span><span class="err">potential_range_indices</span><span class="w"> </span><span class="err">*/</span><span class="p">,</span><span class="w">
+                  </span><span class="nl">"setup_range_conditions"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+                  </span><span class="p">]</span><span class="w"> </span><span class="err">/*</span><span class="w"> </span><span class="err">setup_range_conditions</span><span class="w"> </span><span class="err">*/</span><span class="p">,</span><span class="w">
+                  </span><span class="nl">"group_index_range"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+                    </span><span class="nl">"chosen"</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="p">,</span><span class="w">
+                    </span><span class="nl">"cause"</span><span class="p">:</span><span class="w"> </span><span class="s2">"not_group_by_or_distinct"</span><span class="w">
+                  </span><span class="p">}</span><span class="w"> </span><span class="err">/*</span><span class="w"> </span><span class="err">group_index_range</span><span class="w"> </span><span class="err">*/</span><span class="p">,</span><span class="w">
+                  </span><span class="nl">"analyzing_range_alternatives"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+                    </span><span class="nl">"range_scan_alternatives"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+                      </span><span class="p">{</span><span class="w">
+                        </span><span class="nl">"index"</span><span class="p">:</span><span class="w"> </span><span class="s2">"PRIMARY"</span><span class="p">,</span><span class="w">
+                        </span><span class="nl">"ranges"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+                          </span><span class="s2">"id &lt; 4"</span><span class="w">
+                        </span><span class="p">]</span><span class="w"> </span><span class="err">/*</span><span class="w"> </span><span class="err">ranges</span><span class="w"> </span><span class="err">*/</span><span class="p">,</span><span class="w">
+                        </span><span class="nl">"index_dives_for_eq_ranges"</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span><span class="w">
+                        </span><span class="nl">"rowid_ordered"</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span><span class="w">
+                        </span><span class="nl">"using_mrr"</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="p">,</span><span class="w">
+                        </span><span class="nl">"index_only"</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="p">,</span><span class="w">
+                        </span><span class="nl">"rows"</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span><span class="w">
+                        </span><span class="nl">"cost"</span><span class="p">:</span><span class="w"> </span><span class="mf">1.6154</span><span class="p">,</span><span class="w">
+                        </span><span class="nl">"chosen"</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="w">
+                      </span><span class="p">}</span><span class="w">
+                    </span><span class="p">]</span><span class="w"> </span><span class="err">/*</span><span class="w"> </span><span class="err">range_scan_alternatives</span><span class="w"> </span><span class="err">*/</span><span class="p">,</span><span class="w">
+                    </span><span class="nl">"analyzing_roworder_intersect"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+                      </span><span class="nl">"usable"</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="p">,</span><span class="w">
+                      </span><span class="nl">"cause"</span><span class="p">:</span><span class="w"> </span><span class="s2">"too_few_roworder_scans"</span><span class="w">
+                    </span><span class="p">}</span><span class="w"> </span><span class="err">/*</span><span class="w"> </span><span class="err">analyzing_roworder_intersect</span><span class="w"> </span><span class="err">*/</span><span class="w">
+                  </span><span class="p">}</span><span class="w"> </span><span class="err">/*</span><span class="w"> </span><span class="err">analyzing_range_alternatives</span><span class="w"> </span><span class="err">*/</span><span class="p">,</span><span class="w">
+                  </span><span class="nl">"chosen_range_access_summary"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+                    </span><span class="nl">"range_access_plan"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+                      </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"range_scan"</span><span class="p">,</span><span class="w">
+                      </span><span class="nl">"index"</span><span class="p">:</span><span class="w"> </span><span class="s2">"PRIMARY"</span><span class="p">,</span><span class="w">
+                      </span><span class="nl">"rows"</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span><span class="w">
+                      </span><span class="nl">"ranges"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+                        </span><span class="s2">"id &lt; 4"</span><span class="w">
+                      </span><span class="p">]</span><span class="w"> </span><span class="err">/*</span><span class="w"> </span><span class="err">ranges</span><span class="w"> </span><span class="err">*/</span><span class="w">
+                    </span><span class="p">}</span><span class="w"> </span><span class="err">/*</span><span class="w"> </span><span class="err">range_access_plan</span><span class="w"> </span><span class="err">*/</span><span class="p">,</span><span class="w">
+                    </span><span class="nl">"rows_for_plan"</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span><span class="w">
+                    </span><span class="nl">"cost_for_plan"</span><span class="p">:</span><span class="w"> </span><span class="mf">1.6154</span><span class="p">,</span><span class="w">
+                    </span><span class="nl">"chosen"</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="w">
+                  </span><span class="p">}</span><span class="w"> </span><span class="err">/*</span><span class="w"> </span><span class="err">chosen_range_access_summary</span><span class="w"> </span><span class="err">*/</span><span class="w">
+                </span><span class="p">}</span><span class="w"> </span><span class="err">/*</span><span class="w"> </span><span class="err">range_analysis</span><span class="w"> </span><span class="err">*/</span><span class="w">
+              </span><span class="p">}</span><span class="w">
+            </span><span class="p">]</span><span class="w"> </span><span class="err">/*</span><span class="w"> </span><span class="err">rows_estimation</span><span class="w"> </span><span class="err">*/</span><span class="w">
+          </span><span class="p">},</span><span class="w">
+          </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"considered_execution_plans"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+              </span><span class="p">{</span><span class="w">
+                </span><span class="nl">"plan_prefix"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+                </span><span class="p">]</span><span class="w"> </span><span class="err">/*</span><span class="w"> </span><span class="err">plan_prefix</span><span class="w"> </span><span class="err">*/</span><span class="p">,</span><span class="w">
+                </span><span class="nl">"table"</span><span class="p">:</span><span class="w"> </span><span class="s2">"`tb_item`"</span><span class="p">,</span><span class="w">
+                </span><span class="nl">"best_access_path"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+                  </span><span class="nl">"considered_access_paths"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+                    </span><span class="p">{</span><span class="w">
+                      </span><span class="nl">"access_type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"range"</span><span class="p">,</span><span class="w">
+                      </span><span class="nl">"rows"</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span><span class="w">
+                      </span><span class="nl">"cost"</span><span class="p">:</span><span class="w"> </span><span class="mf">2.2154</span><span class="p">,</span><span class="w">
+                      </span><span class="nl">"chosen"</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="w">
+                    </span><span class="p">}</span><span class="w">
+                  </span><span class="p">]</span><span class="w"> </span><span class="err">/*</span><span class="w"> </span><span class="err">considered_access_paths</span><span class="w"> </span><span class="err">*/</span><span class="w">
+                </span><span class="p">}</span><span class="w"> </span><span class="err">/*</span><span class="w"> </span><span class="err">best_access_path</span><span class="w"> </span><span class="err">*/</span><span class="p">,</span><span class="w">
+                </span><span class="nl">"cost_for_plan"</span><span class="p">:</span><span class="w"> </span><span class="mf">2.2154</span><span class="p">,</span><span class="w">
+                </span><span class="nl">"rows_for_plan"</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span><span class="w">
+                </span><span class="nl">"chosen"</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="w">
+              </span><span class="p">}</span><span class="w">
+            </span><span class="p">]</span><span class="w"> </span><span class="err">/*</span><span class="w"> </span><span class="err">considered_execution_plans</span><span class="w"> </span><span class="err">*/</span><span class="w">
+          </span><span class="p">},</span><span class="w">
+          </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"attaching_conditions_to_tables"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+              </span><span class="nl">"original_condition"</span><span class="p">:</span><span class="w"> </span><span class="s2">"(`tb_item`.`id` &lt; 4)"</span><span class="p">,</span><span class="w">
+              </span><span class="nl">"attached_conditions_computation"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+              </span><span class="p">]</span><span class="w"> </span><span class="err">/*</span><span class="w"> </span><span class="err">attached_conditions_computation</span><span class="w"> </span><span class="err">*/</span><span class="p">,</span><span class="w">
+              </span><span class="nl">"attached_conditions_summary"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+                </span><span class="p">{</span><span class="w">
+                  </span><span class="nl">"table"</span><span class="p">:</span><span class="w"> </span><span class="s2">"`tb_item`"</span><span class="p">,</span><span class="w">
+                  </span><span class="nl">"attached"</span><span class="p">:</span><span class="w"> </span><span class="s2">"(`tb_item`.`id` &lt; 4)"</span><span class="w">
+                </span><span class="p">}</span><span class="w">
+              </span><span class="p">]</span><span class="w"> </span><span class="err">/*</span><span class="w"> </span><span class="err">attached_conditions_summary</span><span class="w"> </span><span class="err">*/</span><span class="w">
+            </span><span class="p">}</span><span class="w"> </span><span class="err">/*</span><span class="w"> </span><span class="err">attaching_conditions_to_tables</span><span class="w"> </span><span class="err">*/</span><span class="w">
+          </span><span class="p">},</span><span class="w">
+          </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"refine_plan"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+              </span><span class="p">{</span><span class="w">
+                </span><span class="nl">"table"</span><span class="p">:</span><span class="w"> </span><span class="s2">"`tb_item`"</span><span class="p">,</span><span class="w">
+                </span><span class="nl">"access_type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"range"</span><span class="w">
+              </span><span class="p">}</span><span class="w">
+            </span><span class="p">]</span><span class="w"> </span><span class="err">/*</span><span class="w"> </span><span class="err">refine_plan</span><span class="w"> </span><span class="err">*/</span><span class="w">
+          </span><span class="p">}</span><span class="w">
+        </span><span class="p">]</span><span class="w"> </span><span class="err">/*</span><span class="w"> </span><span class="err">steps</span><span class="w"> </span><span class="err">*/</span><span class="w">
+      </span><span class="p">}</span><span class="w"> </span><span class="err">/*</span><span class="w"> </span><span class="err">join_optimization</span><span class="w"> </span><span class="err">*/</span><span class="w">
+    </span><span class="p">},</span><span class="w">
+    </span><span class="p">{</span><span class="w">
+      </span><span class="nl">"join_execution"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+        </span><span class="nl">"select#"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w">
+        </span><span class="nl">"steps"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+        </span><span class="p">]</span><span class="w"> </span><span class="err">/*</span><span class="w"> </span><span class="err">steps</span><span class="w"> </span><span class="err">*/</span><span class="w">
+      </span><span class="p">}</span><span class="w"> </span><span class="err">/*</span><span class="w"> </span><span class="err">join_execution</span><span class="w"> </span><span class="err">*/</span><span class="w">
+    </span><span class="p">}</span><span class="w">
+  </span><span class="p">]</span><span class="w"> </span><span class="err">/*</span><span class="w"> </span><span class="err">steps</span><span class="w"> </span><span class="err">*/</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></pre></td></tr></tbody></table></code></pre></div></div><h3 id="4-索引的使用">4. 索引的使用</h3><p>索引是数据库优化最常用也是最重要的手段之一, 通过索引通常可以帮助用户解决大多数的MySQL的性能优化问题。</p><h4 id="41-验证索引提升查询效率">4.1 验证索引提升查询效率</h4><p>在我们准备的表结构tb_item 中， 一共存储了 300 万记录；</p><p>A. 根据ID查询</p><div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+</pre></td><td class="rouge-code"><pre>select * from tb_item where id = 1999\G;
+</pre></td></tr></tbody></table></code></pre></div></div><p><img src="../../img/in-post/2020-9-14-mysql/assets2/1553261992653.png" alt="1553261992653"></p><p>查询速度很快， 接近0s ， 主要的原因是因为id为主键， 有索引；</p><p><img src="../../img/in-post/2020-9-14-mysql/assets2/1553262044466.png" alt="1553262044466"></p><p>2). 根据 title 进行精确查询</p><pre><code class="language-SQL">select * from tb_item where title = 'iphoneX 移动3G 32G941'\G; 
+</code></pre><p><img src="../../img/in-post/2020-9-14-mysql/assets2/1553262215900.png" alt="1553262215900"></p><p>查看SQL语句的执行计划 ：</p><p><img src="../../img/in-post/2020-9-14-mysql/assets2/1553262469785.png" alt="1553262469785"></p><p>处理方案 ， 针对title字段， 创建索引 ：</p><pre><code class="language-SQL">create index idx_item_title on tb_item(title);
+</code></pre><p><img src="../../img/in-post/2020-9-14-mysql/assets2/1553263229523.png" alt="1553263229523"></p><p>索引创建完成之后，再次进行查询 ：</p><p><img src="../../img/in-post/2020-9-14-mysql/assets2/1553263302706.png" alt="1553263302706"></p><p>通过explain ， 查看执行计划，执行SQL时使用了刚才创建的索引</p><p><img src="../../img/in-post/2020-9-14-mysql/assets2/1553263355262.png" alt="1553263355262"></p><h4 id="42-索引的使用">4.2 索引的使用</h4><h5 id="421-准备环境">4.2.1 准备环境</h5><div class="language-sql highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+</pre></td><td class="rouge-code"><pre><span class="k">create</span> <span class="k">table</span> <span class="nv">`tb_seller`</span> <span class="p">(</span>
+	<span class="nv">`sellerid`</span> <span class="nb">varchar</span> <span class="p">(</span><span class="mi">100</span><span class="p">),</span>
+	<span class="nv">`name`</span> <span class="nb">varchar</span> <span class="p">(</span><span class="mi">100</span><span class="p">),</span>
+	<span class="nv">`nickname`</span> <span class="nb">varchar</span> <span class="p">(</span><span class="mi">50</span><span class="p">),</span>
+	<span class="nv">`password`</span> <span class="nb">varchar</span> <span class="p">(</span><span class="mi">60</span><span class="p">),</span>
+	<span class="nv">`status`</span> <span class="nb">varchar</span> <span class="p">(</span><span class="mi">1</span><span class="p">),</span>
+	<span class="nv">`address`</span> <span class="nb">varchar</span> <span class="p">(</span><span class="mi">100</span><span class="p">),</span>
+	<span class="nv">`createtime`</span> <span class="nb">datetime</span><span class="p">,</span>
+    <span class="k">primary</span> <span class="k">key</span><span class="p">(</span><span class="nv">`sellerid`</span><span class="p">)</span>
+<span class="p">)</span><span class="n">engine</span><span class="o">=</span><span class="n">innodb</span> <span class="k">default</span> <span class="n">charset</span><span class="o">=</span><span class="n">utf8mb4</span><span class="p">;</span> 
+
+<span class="k">insert</span> <span class="k">into</span> <span class="nv">`tb_seller`</span> <span class="p">(</span><span class="nv">`sellerid`</span><span class="p">,</span> <span class="nv">`name`</span><span class="p">,</span> <span class="nv">`nickname`</span><span class="p">,</span> <span class="nv">`password`</span><span class="p">,</span> <span class="nv">`status`</span><span class="p">,</span> <span class="nv">`address`</span><span class="p">,</span> <span class="nv">`createtime`</span><span class="p">)</span> <span class="k">values</span><span class="p">(</span><span class="s1">'alibaba'</span><span class="p">,</span><span class="s1">'阿里巴巴'</span><span class="p">,</span><span class="s1">'阿里小店'</span><span class="p">,</span><span class="s1">'e10adc3949ba59abbe56e057f20f883e'</span><span class="p">,</span><span class="s1">'1'</span><span class="p">,</span><span class="s1">'北京市'</span><span class="p">,</span><span class="s1">'2088-01-01 12:00:00'</span><span class="p">);</span>
+<span class="k">insert</span> <span class="k">into</span> <span class="nv">`tb_seller`</span> <span class="p">(</span><span class="nv">`sellerid`</span><span class="p">,</span> <span class="nv">`name`</span><span class="p">,</span> <span class="nv">`nickname`</span><span class="p">,</span> <span class="nv">`password`</span><span class="p">,</span> <span class="nv">`status`</span><span class="p">,</span> <span class="nv">`address`</span><span class="p">,</span> <span class="nv">`createtime`</span><span class="p">)</span> <span class="k">values</span><span class="p">(</span><span class="s1">'baidu'</span><span class="p">,</span><span class="s1">'百度科技有限公司'</span><span class="p">,</span><span class="s1">'百度小店'</span><span class="p">,</span><span class="s1">'e10adc3949ba59abbe56e057f20f883e'</span><span class="p">,</span><span class="s1">'1'</span><span class="p">,</span><span class="s1">'北京市'</span><span class="p">,</span><span class="s1">'2088-01-01 12:00:00'</span><span class="p">);</span>
+<span class="k">insert</span> <span class="k">into</span> <span class="nv">`tb_seller`</span> <span class="p">(</span><span class="nv">`sellerid`</span><span class="p">,</span> <span class="nv">`name`</span><span class="p">,</span> <span class="nv">`nickname`</span><span class="p">,</span> <span class="nv">`password`</span><span class="p">,</span> <span class="nv">`status`</span><span class="p">,</span> <span class="nv">`address`</span><span class="p">,</span> <span class="nv">`createtime`</span><span class="p">)</span> <span class="k">values</span><span class="p">(</span><span class="s1">'huawei'</span><span class="p">,</span><span class="s1">'华为科技有限公司'</span><span class="p">,</span><span class="s1">'华为小店'</span><span class="p">,</span><span class="s1">'e10adc3949ba59abbe56e057f20f883e'</span><span class="p">,</span><span class="s1">'0'</span><span class="p">,</span><span class="s1">'北京市'</span><span class="p">,</span><span class="s1">'2088-01-01 12:00:00'</span><span class="p">);</span>
+<span class="k">insert</span> <span class="k">into</span> <span class="nv">`tb_seller`</span> <span class="p">(</span><span class="nv">`sellerid`</span><span class="p">,</span> <span class="nv">`name`</span><span class="p">,</span> <span class="nv">`nickname`</span><span class="p">,</span> <span class="nv">`password`</span><span class="p">,</span> <span class="nv">`status`</span><span class="p">,</span> <span class="nv">`address`</span><span class="p">,</span> <span class="nv">`createtime`</span><span class="p">)</span> <span class="k">values</span><span class="p">(</span><span class="s1">'itcast'</span><span class="p">,</span><span class="s1">'传智播客教育科技有限公司'</span><span class="p">,</span><span class="s1">'传智播客'</span><span class="p">,</span><span class="s1">'e10adc3949ba59abbe56e057f20f883e'</span><span class="p">,</span><span class="s1">'1'</span><span class="p">,</span><span class="s1">'北京市'</span><span class="p">,</span><span class="s1">'2088-01-01 12:00:00'</span><span class="p">);</span>
+<span class="k">insert</span> <span class="k">into</span> <span class="nv">`tb_seller`</span> <span class="p">(</span><span class="nv">`sellerid`</span><span class="p">,</span> <span class="nv">`name`</span><span class="p">,</span> <span class="nv">`nickname`</span><span class="p">,</span> <span class="nv">`password`</span><span class="p">,</span> <span class="nv">`status`</span><span class="p">,</span> <span class="nv">`address`</span><span class="p">,</span> <span class="nv">`createtime`</span><span class="p">)</span> <span class="k">values</span><span class="p">(</span><span class="s1">'itheima'</span><span class="p">,</span><span class="s1">'黑马程序员'</span><span class="p">,</span><span class="s1">'黑马程序员'</span><span class="p">,</span><span class="s1">'e10adc3949ba59abbe56e057f20f883e'</span><span class="p">,</span><span class="s1">'0'</span><span class="p">,</span><span class="s1">'北京市'</span><span class="p">,</span><span class="s1">'2088-01-01 12:00:00'</span><span class="p">);</span>
+<span class="k">insert</span> <span class="k">into</span> <span class="nv">`tb_seller`</span> <span class="p">(</span><span class="nv">`sellerid`</span><span class="p">,</span> <span class="nv">`name`</span><span class="p">,</span> <span class="nv">`nickname`</span><span class="p">,</span> <span class="nv">`password`</span><span class="p">,</span> <span class="nv">`status`</span><span class="p">,</span> <span class="nv">`address`</span><span class="p">,</span> <span class="nv">`createtime`</span><span class="p">)</span> <span class="k">values</span><span class="p">(</span><span class="s1">'luoji'</span><span class="p">,</span><span class="s1">'罗技科技有限公司'</span><span class="p">,</span><span class="s1">'罗技小店'</span><span class="p">,</span><span class="s1">'e10adc3949ba59abbe56e057f20f883e'</span><span class="p">,</span><span class="s1">'1'</span><span class="p">,</span><span class="s1">'北京市'</span><span class="p">,</span><span class="s1">'2088-01-01 12:00:00'</span><span class="p">);</span>
+<span class="k">insert</span> <span class="k">into</span> <span class="nv">`tb_seller`</span> <span class="p">(</span><span class="nv">`sellerid`</span><span class="p">,</span> <span class="nv">`name`</span><span class="p">,</span> <span class="nv">`nickname`</span><span class="p">,</span> <span class="nv">`password`</span><span class="p">,</span> <span class="nv">`status`</span><span class="p">,</span> <span class="nv">`address`</span><span class="p">,</span> <span class="nv">`createtime`</span><span class="p">)</span> <span class="k">values</span><span class="p">(</span><span class="s1">'oppo'</span><span class="p">,</span><span class="s1">'OPPO科技有限公司'</span><span class="p">,</span><span class="s1">'OPPO官方旗舰店'</span><span class="p">,</span><span class="s1">'e10adc3949ba59abbe56e057f20f883e'</span><span class="p">,</span><span class="s1">'0'</span><span class="p">,</span><span class="s1">'北京市'</span><span class="p">,</span><span class="s1">'2088-01-01 12:00:00'</span><span class="p">);</span>
+<span class="k">insert</span> <span class="k">into</span> <span class="nv">`tb_seller`</span> <span class="p">(</span><span class="nv">`sellerid`</span><span class="p">,</span> <span class="nv">`name`</span><span class="p">,</span> <span class="nv">`nickname`</span><span class="p">,</span> <span class="nv">`password`</span><span class="p">,</span> <span class="nv">`status`</span><span class="p">,</span> <span class="nv">`address`</span><span class="p">,</span> <span class="nv">`createtime`</span><span class="p">)</span> <span class="k">values</span><span class="p">(</span><span class="s1">'ourpalm'</span><span class="p">,</span><span class="s1">'掌趣科技股份有限公司'</span><span class="p">,</span><span class="s1">'掌趣小店'</span><span class="p">,</span><span class="s1">'e10adc3949ba59abbe56e057f20f883e'</span><span class="p">,</span><span class="s1">'1'</span><span class="p">,</span><span class="s1">'北京市'</span><span class="p">,</span><span class="s1">'2088-01-01 12:00:00'</span><span class="p">);</span>
+<span class="k">insert</span> <span class="k">into</span> <span class="nv">`tb_seller`</span> <span class="p">(</span><span class="nv">`sellerid`</span><span class="p">,</span> <span class="nv">`name`</span><span class="p">,</span> <span class="nv">`nickname`</span><span class="p">,</span> <span class="nv">`password`</span><span class="p">,</span> <span class="nv">`status`</span><span class="p">,</span> <span class="nv">`address`</span><span class="p">,</span> <span class="nv">`createtime`</span><span class="p">)</span> <span class="k">values</span><span class="p">(</span><span class="s1">'qiandu'</span><span class="p">,</span><span class="s1">'千度科技'</span><span class="p">,</span><span class="s1">'千度小店'</span><span class="p">,</span><span class="s1">'e10adc3949ba59abbe56e057f20f883e'</span><span class="p">,</span><span class="s1">'2'</span><span class="p">,</span><span class="s1">'北京市'</span><span class="p">,</span><span class="s1">'2088-01-01 12:00:00'</span><span class="p">);</span>
+<span class="k">insert</span> <span class="k">into</span> <span class="nv">`tb_seller`</span> <span class="p">(</span><span class="nv">`sellerid`</span><span class="p">,</span> <span class="nv">`name`</span><span class="p">,</span> <span class="nv">`nickname`</span><span class="p">,</span> <span class="nv">`password`</span><span class="p">,</span> <span class="nv">`status`</span><span class="p">,</span> <span class="nv">`address`</span><span class="p">,</span> <span class="nv">`createtime`</span><span class="p">)</span> <span class="k">values</span><span class="p">(</span><span class="s1">'sina'</span><span class="p">,</span><span class="s1">'新浪科技有限公司'</span><span class="p">,</span><span class="s1">'新浪官方旗舰店'</span><span class="p">,</span><span class="s1">'e10adc3949ba59abbe56e057f20f883e'</span><span class="p">,</span><span class="s1">'1'</span><span class="p">,</span><span class="s1">'北京市'</span><span class="p">,</span><span class="s1">'2088-01-01 12:00:00'</span><span class="p">);</span>
+<span class="k">insert</span> <span class="k">into</span> <span class="nv">`tb_seller`</span> <span class="p">(</span><span class="nv">`sellerid`</span><span class="p">,</span> <span class="nv">`name`</span><span class="p">,</span> <span class="nv">`nickname`</span><span class="p">,</span> <span class="nv">`password`</span><span class="p">,</span> <span class="nv">`status`</span><span class="p">,</span> <span class="nv">`address`</span><span class="p">,</span> <span class="nv">`createtime`</span><span class="p">)</span> <span class="k">values</span><span class="p">(</span><span class="s1">'xiaomi'</span><span class="p">,</span><span class="s1">'小米科技'</span><span class="p">,</span><span class="s1">'小米官方旗舰店'</span><span class="p">,</span><span class="s1">'e10adc3949ba59abbe56e057f20f883e'</span><span class="p">,</span><span class="s1">'1'</span><span class="p">,</span><span class="s1">'西安市'</span><span class="p">,</span><span class="s1">'2088-01-01 12:00:00'</span><span class="p">);</span>
+<span class="k">insert</span> <span class="k">into</span> <span class="nv">`tb_seller`</span> <span class="p">(</span><span class="nv">`sellerid`</span><span class="p">,</span> <span class="nv">`name`</span><span class="p">,</span> <span class="nv">`nickname`</span><span class="p">,</span> <span class="nv">`password`</span><span class="p">,</span> <span class="nv">`status`</span><span class="p">,</span> <span class="nv">`address`</span><span class="p">,</span> <span class="nv">`createtime`</span><span class="p">)</span> <span class="k">values</span><span class="p">(</span><span class="s1">'yijia'</span><span class="p">,</span><span class="s1">'宜家家居'</span><span class="p">,</span><span class="s1">'宜家家居旗舰店'</span><span class="p">,</span><span class="s1">'e10adc3949ba59abbe56e057f20f883e'</span><span class="p">,</span><span class="s1">'1'</span><span class="p">,</span><span class="s1">'北京市'</span><span class="p">,</span><span class="s1">'2088-01-01 12:00:00'</span><span class="p">);</span>
+
+
+<span class="k">create</span> <span class="k">index</span> <span class="n">idx_seller_name_sta_addr</span> <span class="k">on</span> <span class="n">tb_seller</span><span class="p">(</span><span class="n">name</span><span class="p">,</span><span class="n">status</span><span class="p">,</span><span class="n">address</span><span class="p">);</span>
+</pre></td></tr></tbody></table></code></pre></div></div><h5 id="422-避免索引失效">4.2.2 避免索引失效</h5><p>1). 全值匹配 ，对索引中所有列都指定具体值。</p><p>改情况下，索引生效，执行效率高。</p><div class="language-sql highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+</pre></td><td class="rouge-code"><pre><span class="k">explain</span> <span class="k">select</span> <span class="o">*</span> <span class="k">from</span> <span class="n">tb_seller</span> <span class="k">where</span> <span class="n">name</span><span class="o">=</span><span class="s1">'小米科技'</span> <span class="k">and</span> <span class="n">status</span><span class="o">=</span><span class="s1">'1'</span> <span class="k">and</span> <span class="n">address</span><span class="o">=</span><span class="s1">'北京市'</span><span class="err">\</span><span class="k">G</span><span class="p">;</span>
+</pre></td></tr></tbody></table></code></pre></div></div><p><img src="../../img/in-post/2020-9-14-mysql/assets2/1556170997921.png" alt="1556170997921"></p><p>2). 最左前缀法则</p><p>如果索引了多列，要遵守最左前缀法则。指的是查询从索引的最左前列开始，并且不跳过索引中的列。</p><p>匹配最左前缀法则，走索引：</p><p><img src="../../img/in-post/2020-9-14-mysql/assets2/1556171348995.png" alt="1556171348995"></p><p>违法最左前缀法则 ， 索引失效：</p><p><img src="../../img/in-post/2020-9-14-mysql/assets2/1556171428140.png" alt="1556171428140"></p><p>如果符合最左法则，但是出现跳跃某一列，只有最左列索引生效：</p><p><img src="../../img/in-post/2020-9-14-mysql/assets2/1556171662203.png" alt="1556171662203"></p><p>3). 范围查询右边的列，不能使用索引 。</p><p><img src="../../img/in-post/2020-9-14-mysql/assets2/1556172256791.png" alt="1556172256791"></p><p>根据前面的两个字段name ， status 查询是走索引的， 但是最后一个条件address 没有用到索引。</p><p>4). 不要在索引列上进行运算操作， 索引将失效。</p><p><img src="../../img/in-post/2020-9-14-mysql/assets2/1556172813715.png" alt="1556172813715"></p><p>5). 字符串不加单引号，造成索引失效。</p><p><img src="../../img/in-post/2020-9-14-mysql/assets2/1556172967493.png" alt="1556172967493"></p><p>由于，在查询是，没有对字符串加单引号，MySQL的查询优化器，会自动的进行类型转换，造成索引失效。</p><p>6). 尽量使用覆盖索引，避免select *</p><p>尽量使用覆盖索引（只访问索引的查询（索引列完全包含查询列）），减少select * 。</p><p><img src="../../img/in-post/2020-9-14-mysql/assets2/1556173928299.png" alt="1556173928299"></p><p>如果查询列，超出索引列，也会降低性能。</p><p><img src="../../img/in-post/2020-9-14-mysql/assets2/1556173986068.png" alt="1556173986068"></p><div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+</pre></td><td class="rouge-code"><pre>TIP : 
+	
+    using index ：使用覆盖索引的时候就会出现
+
+    using where：在查找使用索引的情况下，需要回表去查询所需的数据
+
+    using index condition：查找使用了索引，但是需要回表查询数据
+
+    using index ; using where：查找使用了索引，但是需要的数据都在索引列中能找到，所以不需要回表查询数据
+</pre></td></tr></tbody></table></code></pre></div></div><p>7). 用or分割开的条件， 如果or前的条件中的列有索引，而后面的列中没有索引，那么涉及的索引都不会被用到。</p><p>示例，name字段是索引列 ， 而createtime不是索引列，中间是or进行连接是不走索引的 ：</p><div class="language-sql highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+</pre></td><td class="rouge-code"><pre><span class="k">explain</span> <span class="k">select</span> <span class="o">*</span> <span class="k">from</span> <span class="n">tb_seller</span> <span class="k">where</span> <span class="n">name</span><span class="o">=</span><span class="s1">'黑马程序员'</span> <span class="k">or</span> <span class="n">createtime</span> <span class="o">=</span> <span class="s1">'2088-01-01 12:00:00'</span><span class="err">\</span><span class="k">G</span><span class="p">;</span>	
+</pre></td></tr></tbody></table></code></pre></div></div><p><img src="../../img/in-post/2020-9-14-mysql/assets2/1556174994440.png" alt="1556174994440"></p><p>8). 以%开头的Like模糊查询，索引失效。</p><p>如果仅仅是尾部模糊匹配，索引不会失效。如果是头部模糊匹配，索引失效。</p><p><img src="../../img/in-post/2020-9-14-mysql/assets2/1556175114369.png" alt="1556175114369"></p><p>解决方案 ：</p><p>通过覆盖索引来解决</p><p><img src="../../img/in-post/2020-9-14-mysql/assets2/1556247686483.png" alt="1556247686483"></p><p>9). 如果MySQL评估使用索引比全表更慢，则不使用索引。</p><p><img src="../../img/in-post/2020-9-14-mysql/assets2/1556175445210.png" alt="1556175445210"></p><p>10). is NULL ， is NOT NULL <font color="red">有时</font>索引失效。</p><p><img src="../../img/in-post/2020-9-14-mysql/assets2/1556180634889.png" alt="1556180634889"></p><p>11). in 走索引， not in 索引失效。</p><p><img src="../../img/in-post/2020-9-14-mysql/assets2/1556249602732.png" alt="1556249602732"></p><p>12). 单列索引和复合索引。</p><p>尽量使用复合索引，而少使用单列索引 。</p><p>创建复合索引</p><div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+</pre></td><td class="rouge-code"><pre>create index idx_name_sta_address on tb_seller(name, status, address);
+
+就相当于创建了三个索引 ： 
+	name
+	name + status
+	name + status + address
+
+</pre></td></tr></tbody></table></code></pre></div></div><p>创建单列索引</p><div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+</pre></td><td class="rouge-code"><pre>create index idx_seller_name on tb_seller(name);
+create index idx_seller_status on tb_seller(status);
+create index idx_seller_address on tb_seller(address);
+</pre></td></tr></tbody></table></code></pre></div></div><p>数据库会选择一个最优的索引（辨识度最高索引）来使用，并不会使用全部索引 。</p><h4 id="43-查看索引使用情况">4.3 查看索引使用情况</h4><div class="language-sql highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+</pre></td><td class="rouge-code"><pre><span class="k">show</span> <span class="n">status</span> <span class="k">like</span> <span class="s1">'Handler_read%'</span><span class="p">;</span>	
+
+<span class="k">show</span> <span class="k">global</span> <span class="n">status</span> <span class="k">like</span> <span class="s1">'Handler_read%'</span><span class="p">;</span>	
+</pre></td></tr></tbody></table></code></pre></div></div><p><img src="../../img/in-post/2020-9-14-mysql/assets2/1552885364563.png" alt="1552885364563"></p><div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+</pre></td><td class="rouge-code"><pre>Handler_read_first：索引中第一条被读的次数。如果较高，表示服务器正执行大量全索引扫描（这个值越低越好）。
+
+Handler_read_key：如果索引正在工作，这个值代表一个行被索引值读的次数，如果值越低，表示索引得到的性能改善不高，因为索引不经常使用（这个值越高越好）。
+
+Handler_read_next ：按照键顺序读下一行的请求数。如果你用范围约束或如果执行索引扫描来查询索引列，该值增加。
+
+Handler_read_prev：按照键顺序读前一行的请求数。该读方法主要用于优化ORDER BY ... DESC。
+
+Handler_read_rnd ：根据固定位置读一行的请求数。如果你正执行大量查询并需要对结果进行排序该值较高。你可能使用了大量需要MySQL扫描整个表的查询或你的连接没有正确使用键。这个值较高，意味着运行效率低，应该建立索引来补救。
+
+Handler_read_rnd_next：在数据文件中读下一行的请求数。如果你正进行大量的表扫描，该值较高。通常说明你的表索引不正确或写入的查询没有利用索引。
+</pre></td></tr></tbody></table></code></pre></div></div><h3 id="5-sql优化">5. SQL优化</h3><h4 id="51-大批量插入数据">5.1 大批量插入数据</h4><p>环境准备 ：</p><div class="language-sql highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+</pre></td><td class="rouge-code"><pre><span class="k">CREATE</span> <span class="k">TABLE</span> <span class="nv">`tb_user_2`</span> <span class="p">(</span>
+  <span class="nv">`id`</span> <span class="nb">int</span><span class="p">(</span><span class="mi">11</span><span class="p">)</span> <span class="k">NOT</span> <span class="k">NULL</span> <span class="n">AUTO_INCREMENT</span><span class="p">,</span>
+  <span class="nv">`username`</span> <span class="nb">varchar</span><span class="p">(</span><span class="mi">45</span><span class="p">)</span> <span class="k">NOT</span> <span class="k">NULL</span><span class="p">,</span>
+  <span class="nv">`password`</span> <span class="nb">varchar</span><span class="p">(</span><span class="mi">96</span><span class="p">)</span> <span class="k">NOT</span> <span class="k">NULL</span><span class="p">,</span>
+  <span class="nv">`name`</span> <span class="nb">varchar</span><span class="p">(</span><span class="mi">45</span><span class="p">)</span> <span class="k">NOT</span> <span class="k">NULL</span><span class="p">,</span>
+  <span class="nv">`birthday`</span> <span class="nb">datetime</span> <span class="k">DEFAULT</span> <span class="k">NULL</span><span class="p">,</span>
+  <span class="nv">`sex`</span> <span class="nb">char</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="k">DEFAULT</span> <span class="k">NULL</span><span class="p">,</span>
+  <span class="nv">`email`</span> <span class="nb">varchar</span><span class="p">(</span><span class="mi">45</span><span class="p">)</span> <span class="k">DEFAULT</span> <span class="k">NULL</span><span class="p">,</span>
+  <span class="nv">`phone`</span> <span class="nb">varchar</span><span class="p">(</span><span class="mi">45</span><span class="p">)</span> <span class="k">DEFAULT</span> <span class="k">NULL</span><span class="p">,</span>
+  <span class="nv">`qq`</span> <span class="nb">varchar</span><span class="p">(</span><span class="mi">32</span><span class="p">)</span> <span class="k">DEFAULT</span> <span class="k">NULL</span><span class="p">,</span>
+  <span class="nv">`status`</span> <span class="nb">varchar</span><span class="p">(</span><span class="mi">32</span><span class="p">)</span> <span class="k">NOT</span> <span class="k">NULL</span> <span class="k">COMMENT</span> <span class="s1">'用户状态'</span><span class="p">,</span>
+  <span class="nv">`create_time`</span> <span class="nb">datetime</span> <span class="k">NOT</span> <span class="k">NULL</span><span class="p">,</span>
+  <span class="nv">`update_time`</span> <span class="nb">datetime</span> <span class="k">DEFAULT</span> <span class="k">NULL</span><span class="p">,</span>
+  <span class="k">PRIMARY</span> <span class="k">KEY</span> <span class="p">(</span><span class="nv">`id`</span><span class="p">),</span>
+  <span class="k">UNIQUE</span> <span class="k">KEY</span> <span class="nv">`unique_user_username`</span> <span class="p">(</span><span class="nv">`username`</span><span class="p">)</span>
+<span class="p">)</span> <span class="n">ENGINE</span><span class="o">=</span><span class="n">InnoDB</span> <span class="k">DEFAULT</span> <span class="n">CHARSET</span><span class="o">=</span><span class="n">utf8</span> <span class="p">;</span>
+</pre></td></tr></tbody></table></code></pre></div></div><p>当使用load 命令导入数据的时候，适当的设置可以提高导入的效率。</p><p><img src="../../img/in-post/2020-9-14-mysql/assets2/1556269346488.png" alt="1556269346488"></p><p>对于 InnoDB 类型的表，有以下几种方式可以提高导入的效率：</p><p>1） 主键顺序插入</p><p>因为InnoDB类型的表是按照主键的顺序保存的，所以将导入的数据按照主键的顺序排列，可以有效的提高导入数据的效率。如果InnoDB表没有主键，那么系统会自动默认创建一个内部列作为主键，所以如果可以给表创建一个主键，将可以利用这点，来提高导入数据的效率。</p><div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+</pre></td><td class="rouge-code"><pre>脚本文件介绍 :
+	sql1.log  ----&gt; 主键有序
+	sql2.log  ----&gt; 主键无序
+</pre></td></tr></tbody></table></code></pre></div></div><p>插入ID顺序排列数据：</p><p><img src="../../img/in-post/2020-9-14-mysql/assets2/1555771750567.png" alt="1555771750567"></p><p>插入ID无序排列数据：</p><p><img src="../../img/in-post/2020-9-14-mysql/assets2/1555771959734.png" alt="1555771959734"></p><p>2） 关闭唯一性校验</p><p>在导入数据前执行 SET UNIQUE_CHECKS=0，关闭唯一性校验，在导入结束后执行SET UNIQUE_CHECKS=1，恢复唯一性校验，可以提高导入的效率。</p><p><img src="../../img/in-post/2020-9-14-mysql/assets2/1555772132736.png" alt="1555772132736"></p><p>3） 手动提交事务</p><p>如果应用使用自动提交的方式，建议在导入前执行 SET AUTOCOMMIT=0，关闭自动提交，导入结束后再执行 SET AUTOCOMMIT=1，打开自动提交，也可以提高导入的效率。</p><p><img src="../../img/in-post/2020-9-14-mysql/assets2/1555772351208.png" alt="1555772351208"></p><h4 id="52-优化insert语句">5.2 优化insert语句</h4><p>当进行数据的insert操作的时候，可以考虑采用以下几种优化方案。</p><ul><li><p>如果需要同时对一张表插入很多行数据时，应该尽量使用多个值表的insert语句，这种方式将大大的缩减客户端与数据库之间的连接、关闭等消耗。使得效率比分开执行的单个insert语句快。</p><p>示例， 原始方式为：</p><div class="language-sql highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+</pre></td><td class="rouge-code"><pre><span class="k">insert</span> <span class="k">into</span> <span class="n">tb_test</span> <span class="k">values</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="s1">'Tom'</span><span class="p">);</span>
+<span class="k">insert</span> <span class="k">into</span> <span class="n">tb_test</span> <span class="k">values</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="s1">'Cat'</span><span class="p">);</span>
+<span class="k">insert</span> <span class="k">into</span> <span class="n">tb_test</span> <span class="k">values</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="s1">'Jerry'</span><span class="p">);</span>
+</pre></td></tr></tbody></table></code></pre></div></div><p>优化后的方案为 ：</p><div class="language-sql highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+</pre></td><td class="rouge-code"><pre><span class="k">insert</span> <span class="k">into</span> <span class="n">tb_test</span> <span class="k">values</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="s1">'Tom'</span><span class="p">),(</span><span class="mi">2</span><span class="p">,</span><span class="s1">'Cat'</span><span class="p">)</span><span class="err">，</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="s1">'Jerry'</span><span class="p">);</span>
+</pre></td></tr></tbody></table></code></pre></div></div></li><li><p>在事务中进行数据插入。</p><div class="language-sql highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+</pre></td><td class="rouge-code"><pre><span class="k">start</span> <span class="n">transaction</span><span class="p">;</span>
+<span class="k">insert</span> <span class="k">into</span> <span class="n">tb_test</span> <span class="k">values</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="s1">'Tom'</span><span class="p">);</span>
+<span class="k">insert</span> <span class="k">into</span> <span class="n">tb_test</span> <span class="k">values</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="s1">'Cat'</span><span class="p">);</span>
+<span class="k">insert</span> <span class="k">into</span> <span class="n">tb_test</span> <span class="k">values</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="s1">'Jerry'</span><span class="p">);</span>
+<span class="k">commit</span><span class="p">;</span>
+</pre></td></tr></tbody></table></code></pre></div></div></li><li><p>数据有序插入</p><div class="language-sql highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+</pre></td><td class="rouge-code"><pre><span class="k">insert</span> <span class="k">into</span> <span class="n">tb_test</span> <span class="k">values</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span><span class="s1">'Tim'</span><span class="p">);</span>
+<span class="k">insert</span> <span class="k">into</span> <span class="n">tb_test</span> <span class="k">values</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="s1">'Tom'</span><span class="p">);</span>
+<span class="k">insert</span> <span class="k">into</span> <span class="n">tb_test</span> <span class="k">values</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="s1">'Jerry'</span><span class="p">);</span>
+<span class="k">insert</span> <span class="k">into</span> <span class="n">tb_test</span> <span class="k">values</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span><span class="s1">'Rose'</span><span class="p">);</span>
+<span class="k">insert</span> <span class="k">into</span> <span class="n">tb_test</span> <span class="k">values</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="s1">'Cat'</span><span class="p">);</span>
+</pre></td></tr></tbody></table></code></pre></div></div><p>优化后</p><div class="language-sql highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+</pre></td><td class="rouge-code"><pre><span class="k">insert</span> <span class="k">into</span> <span class="n">tb_test</span> <span class="k">values</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="s1">'Tom'</span><span class="p">);</span>
+<span class="k">insert</span> <span class="k">into</span> <span class="n">tb_test</span> <span class="k">values</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="s1">'Cat'</span><span class="p">);</span>
+<span class="k">insert</span> <span class="k">into</span> <span class="n">tb_test</span> <span class="k">values</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="s1">'Jerry'</span><span class="p">);</span>
+<span class="k">insert</span> <span class="k">into</span> <span class="n">tb_test</span> <span class="k">values</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span><span class="s1">'Tim'</span><span class="p">);</span>
+<span class="k">insert</span> <span class="k">into</span> <span class="n">tb_test</span> <span class="k">values</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span><span class="s1">'Rose'</span><span class="p">);</span>
+</pre></td></tr></tbody></table></code></pre></div></div></li></ul><h4 id="53-优化order-by语句">5.3 优化order by语句</h4><h5 id="531-环境准备">5.3.1 环境准备</h5><pre><code class="language-SQL">CREATE TABLE `emp` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `name` varchar(100) NOT NULL,
+  `age` int(3) NOT NULL,
+  `salary` int(11) DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4;
+
+insert into `emp` (`id`, `name`, `age`, `salary`) values('1','Tom','25','2300');
+insert into `emp` (`id`, `name`, `age`, `salary`) values('2','Jerry','30','3500');
+insert into `emp` (`id`, `name`, `age`, `salary`) values('3','Luci','25','2800');
+insert into `emp` (`id`, `name`, `age`, `salary`) values('4','Jay','36','3500');
+insert into `emp` (`id`, `name`, `age`, `salary`) values('5','Tom2','21','2200');
+insert into `emp` (`id`, `name`, `age`, `salary`) values('6','Jerry2','31','3300');
+insert into `emp` (`id`, `name`, `age`, `salary`) values('7','Luci2','26','2700');
+insert into `emp` (`id`, `name`, `age`, `salary`) values('8','Jay2','33','3500');
+insert into `emp` (`id`, `name`, `age`, `salary`) values('9','Tom3','23','2400');
+insert into `emp` (`id`, `name`, `age`, `salary`) values('10','Jerry3','32','3100');
+insert into `emp` (`id`, `name`, `age`, `salary`) values('11','Luci3','26','2900');
+insert into `emp` (`id`, `name`, `age`, `salary`) values('12','Jay3','37','4500');
+
+create index idx_emp_age_salary on emp(age,salary);
+</code></pre><h5 id="532-两种排序方式">5.3.2 两种排序方式</h5><p>1). 第一种是通过对返回数据进行排序，也就是通常说的 filesort 排序，所有不是通过索引直接返回排序结果的排序都叫 FileSort 排序。</p><p><img src="../../img/in-post/2020-9-14-mysql/assets2/1556335817763.png" alt="1556335817763"></p><p>2). 第二种通过有序索引顺序扫描直接返回有序数据，这种情况即为 using index，不需要额外排序，操作效率高。</p><p><img src="../../img/in-post/2020-9-14-mysql/assets2/1556335866539.png" alt="1556335866539"></p><p>多字段排序</p><p><img src="../../img/in-post/2020-9-14-mysql/assets2/1556336352061.png" alt="1556336352061"></p><p>了解了MySQL的排序方式，优化目标就清晰了：尽量减少额外的排序，通过索引直接返回有序数据。where 条件和Order by 使用相同的索引，并且Order By 的顺序和索引顺序相同， 并且Order by 的字段都是升序，或者都是降序。否则肯定需要额外的操作，这样就会出现FileSort。</p><h5 id="533-filesort-的优化">5.3.3 Filesort 的优化</h5><p>通过创建合适的索引，能够减少 Filesort 的出现，但是在某些情况下，条件限制不能让Filesort消失，那就需要加快 Filesort的排序操作。对于Filesort ， MySQL 有两种排序算法：</p><p>1） 两次扫描算法 ：MySQL4.1 之前，使用该方式排序。首先根据条件取出排序字段和行指针信息，然后在排序区 sort buffer 中排序，如果sort buffer不够，则在临时表 temporary table 中存储排序结果。完成排序之后，再根据行指针回表读取记录，该操作可能会导致大量随机I/O操作。</p><p>2）一次扫描算法：一次性取出满足条件的所有字段，然后在排序区 sort buffer 中排序后直接输出结果集。排序时内存开销较大，但是排序效率比两次扫描算法要高。</p><p>MySQL 通过比较系统变量 max_length_for_sort_data 的大小和Query语句取出的字段总大小， 来判定是否那种排序算法，如果max_length_for_sort_data 更大，那么使用第二种优化之后的算法；否则使用第一种。</p><p>可以适当提高 sort_buffer_size 和 max_length_for_sort_data 系统变量，来增大排序区的大小，提高排序的效率。</p><p><img src="../../img/in-post/2020-9-14-mysql/assets2/1556338367593.png" alt="1556338367593"></p><h4 id="54-优化group-by-语句">5.4 优化group by 语句</h4><p>由于GROUP BY 实际上也同样会进行排序操作，而且与ORDER BY 相比，GROUP BY 主要只是多了排序之后的分组操作。当然，如果在分组的时候还使用了其他的一些聚合函数，那么还需要一些聚合函数的计算。所以，在GROUP BY 的实现过程中，与 ORDER BY 一样也可以利用到索引。</p><p>如果查询包含 group by 但是用户想要避免排序结果的消耗， 则可以执行order by null 禁止排序。如下 ：</p><pre><code class="language-SQL">drop index idx_emp_age_salary on emp;
+
+explain select age,count(*) from emp group by age;
+</code></pre><p><img src="../../img/in-post/2020-9-14-mysql/assets2/1556339573979.png" alt="1556339573979"></p><p>优化后</p><div class="language-sql highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+</pre></td><td class="rouge-code"><pre><span class="k">explain</span> <span class="k">select</span> <span class="n">age</span><span class="p">,</span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span> <span class="k">from</span> <span class="n">emp</span> <span class="k">group</span> <span class="k">by</span> <span class="n">age</span> <span class="k">order</span> <span class="k">by</span> <span class="k">null</span><span class="p">;</span>
+</pre></td></tr></tbody></table></code></pre></div></div><p><img src="../../img/in-post/2020-9-14-mysql/assets2/1556339633161.png" alt="1556339633161"></p><p>从上面的例子可以看出，第一个SQL语句需要进行”filesort”，而第二个SQL由于order by null 不需要进行 “filesort”， 而上文提过Filesort往往非常耗费时间。</p><p>创建索引 ：</p><pre><code class="language-SQL">create index idx_emp_age_salary on emp(age,salary)；
+</code></pre><p><img src="../../img/in-post/2020-9-14-mysql/assets2/1556339688158.png" alt="1556339688158"></p><h4 id="55-优化嵌套查询">5.5 优化嵌套查询</h4><p>Mysql4.1版本之后，开始支持SQL的子查询。这个技术可以使用SELECT语句来创建一个单列的查询结果，然后把这个结果作为过滤条件用在另一个查询中。使用子查询可以一次性的完成很多逻辑上需要多个步骤才能完成的SQL操作，同时也可以避免事务或者表锁死，并且写起来也很容易。但是，有些情况下，子查询是可以被更高效的连接（JOIN）替代。</p><p>示例 ，查找有角色的所有的用户信息 :</p><pre><code class="language-SQL"> explain select * from t_user where id in (select user_id from user_role );
+</code></pre><p>执行计划为 :</p><p><img src="../../img/in-post/2020-9-14-mysql/assets2/1556359399199.png" alt="1556359399199"></p><p>优化后 :</p><pre><code class="language-SQL">explain select * from t_user u , user_role ur where u.id = ur.user_id;
+</code></pre><p><img src="../../img/in-post/2020-9-14-mysql/assets2/1556359482142.png" alt="1556359482142"></p><p>连接(Join)查询之所以更有效率一些 ，是因为MySQL不需要在内存中创建临时表来完成这个逻辑上需要两个步骤的查询工作。</p><h4 id="56-优化or条件">5.6 优化OR条件</h4><p>对于包含OR的查询子句，如果要利用索引，则OR之间的每个条件列都必须用到索引 ， 而且不能使用到复合索引； 如果没有索引，则应该考虑增加索引。</p><p>获取 emp 表中的所有的索引 ：</p><p><img src="../../img/in-post/2020-9-14-mysql/assets2/1556354464657.png" alt="1556354464657"></p><p>示例 ：</p><pre><code class="language-SQL">explain select * from emp where id = 1 or age = 30;
+</code></pre><p><img src="../../img/in-post/2020-9-14-mysql/assets2/1556354887509.png" alt="1556354887509"></p><p><img src="../../img/in-post/2020-9-14-mysql/assets2/1556354920964.png" alt="1556354920964"></p><p>建议使用 union 替换 or ：</p><p><img src="../../img/in-post/2020-9-14-mysql/assets2/1556355027728.png" alt="1556355027728"></p><p>我们来比较下重要指标，发现主要差别是 type 和 ref 这两项</p><p>type 显示的是访问类型，是较为重要的一个指标，结果值从好到坏依次是：</p><div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+</pre></td><td class="rouge-code"><pre>system &gt; const &gt; eq_ref &gt; ref &gt; fulltext &gt; ref_or_null  &gt; index_merge &gt; unique_subquery &gt; index_subquery &gt; range &gt; index &gt; ALL
+</pre></td></tr></tbody></table></code></pre></div></div><p>UNION 语句的 type 值为 ref，OR 语句的 type 值为 range，可以看到这是一个很明显的差距</p><p>UNION 语句的 ref 值为 const，OR 语句的 type 值为 null，const 表示是常量值引用，非常快</p><p>这两项的差距就说明了 UNION 要优于 OR 。</p><h4 id="57-优化分页查询">5.7 优化分页查询</h4><p>一般分页查询时，通过创建覆盖索引能够比较好地提高性能。一个常见又非常头疼的问题就是 limit 2000000,10 ，此时需要MySQL排序前2000010 记录，仅仅返回2000000 - 2000010 的记录，其他记录丢弃，查询排序的代价非常大 。</p><p><img src="../../img/in-post/2020-9-14-mysql/assets2/1556361314783.png" alt="1556361314783"></p><h5 id="571-优化思路一">5.7.1 优化思路一</h5><p>在索引上完成排序分页操作，最后根据主键关联回原表查询所需要的其他列内容。</p><p><img src="../../img/in-post/2020-9-14-mysql/assets2/1556416102800.png" alt="1556416102800"></p><h5 id="572-优化思路二">5.7.2 优化思路二</h5><p>该方案适用于主键自增的表，可以把Limit 查询转换成某个位置的查询 。</p><p><img src="../../img/in-post/2020-9-14-mysql/assets2/1556363928151.png" alt="1556363928151"></p><h4 id="58-使用sql提示">5.8 使用SQL提示</h4><p>SQL提示，是优化数据库的一个重要手段，简单来说，就是在SQL语句中加入一些人为的提示来达到优化操作的目的。</p><h5 id="581-use-index">5.8.1 USE INDEX</h5><p>在查询语句中表名的后面，添加 use index 来提供希望MySQL去参考的索引列表，就可以让MySQL不再考虑其他可用的索引。</p><div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+</pre></td><td class="rouge-code"><pre>create index idx_seller_name on tb_seller(name);
+</pre></td></tr></tbody></table></code></pre></div></div><p><img src="../../img/in-post/2020-9-14-mysql/assets2/1556370971576.png" alt="1556370971576"></p><h5 id="582-ignore-index">5.8.2 IGNORE INDEX</h5><p>如果用户只是单纯的想让MySQL忽略一个或者多个索引，则可以使用 ignore index 作为 hint 。</p><div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+</pre></td><td class="rouge-code"><pre> explain select * from tb_seller ignore index(idx_seller_name) where name = '小米科技';
+</pre></td></tr></tbody></table></code></pre></div></div><p><img src="../../img/in-post/2020-9-14-mysql/assets2/1556371004594.png" alt="1556371004594"></p><h5 id="583-force-index">5.8.3 FORCE INDEX</h5><p>为强制MySQL使用一个特定的索引，可在查询中使用 force index 作为hint 。</p><pre><code class="language-SQL">create index idx_seller_address on tb_seller(address);
+</code></pre><p><img src="../../img/in-post/2020-9-14-mysql/assets2/1556371355788.png" alt="1556371355788"></p><hr style="visibility:hidden"><ul class="pager"><li class="previous"><a href="/mysql-note-a01.html" data-toggle="tooltip" data-placement="top" title="MySQL学习笔记高级篇（一）">Previous<br><span>MySQL学习笔记高级篇（一）</span></a></li><li class="next"><a href="/mysql-note-a03.html" data-toggle="tooltip" data-placement="top" title="MySQL学习笔记高级篇（三）">Next<br><span>MySQL学习笔记高级篇（三）</span></a></li></ul><hr style="visibility:hidden"><div id="disqus_comment" class="comment"><div id="disqus_thread" class="disqus-thread"></div></div></div><div class="col-lg-2 col-lg-offset-0 visible-lg-block sidebar-container catalog-container"><div class="side-catalog"><hr class="hidden-sm hidden-xs"><h5><a class="catalog-toggle" href="#">CATALOG</a></h5><ul class="catalog-body"></ul></div></div><div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1 sidebar-container"><div class="dropdown navbar-form navbar-right"><input id="search-input" name="word" type="text" aria-haspopup="true" aria-expanded="false" data-toggle="dropdown" class="form-control typeahead" placeholder="搜索"><ul class="dropdown-menu" aria-labelledby="dLabel" id="results-container"></ul></div><script src="/js/simple-jekyll-search.js" type="text/javascript"></script><script>window.simpleJekyllSearch=new SimpleJekyllSearch({searchInput:document.getElementById("search-input"),resultsContainer:document.getElementById("results-container"),json:"/search.json",searchResultTemplate:'<li><a href="{url}" title="{desc}">{title}</a></li>',noResultsText:"没有搜索到文章",limit:20,fuzzy:!0})</script><section><hr class="hidden-sm hidden-xs"><h5><a href="/archive/">FEATURED TAGS</a></h5><div class="tags"><a data-sort="0025" href="/archive/?tag=Linux" title="Linux" rel="3">Linux</a> <a data-sort="0018" href="/archive/?tag=cpp" title="cpp" rel="10">cpp</a> <a data-sort="0020" href="/archive/?tag=%E7%AE%97%E6%B3%95" title="算法" rel="8">算法</a> <a data-sort="0022" href="/archive/?tag=%E5%90%8E%E7%AB%AF" title="后端" rel="6">后端</a> <a data-sort="0022" href="/archive/?tag=%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84" title="数据结构" rel="6">数据结构</a> <a data-sort="0024" href="/archive/?tag=%E6%80%A7%E8%83%BD" title="性能" rel="4">性能</a> <a data-sort="0024" href="/archive/?tag=mysql" title="mysql" rel="4">mysql</a> <a data-sort="0026" href="/archive/?tag=%E4%BA%8C%E8%BF%9B%E5%88%B6" title="二进制" rel="2">二进制</a> <a data-sort="0026" href="/archive/?tag=%E4%BF%A1%E6%81%AF%E5%AE%89%E5%85%A8" title="信息安全" rel="2">信息安全</a> <a data-sort="0026" href="/archive/?tag=%E5%89%8D%E7%AB%AF" title="前端" rel="2">前端</a> <a data-sort="0026" href="/archive/?tag=%E9%93%BE%E8%A1%A8" title="链表" rel="2">链表</a> <a data-sort="0026" href="/archive/?tag=java" title="java" rel="2">java</a> <a data-sort="0026" href="/archive/?tag=kali" title="kali" rel="2">kali</a> <a data-sort="0026" href="/archive/?tag=linux" title="linux" rel="2">linux</a></div></section><hr><h5>FRIENDS</h5><ul class="list-inline"><li><a href="https://2084team.cn/">2084 Team</a></li></ul></div></div><div class="row"><div id="gitmentContainer"></div><script src="/js/gitment.browser.js"></script><link rel="stylesheet" href="/css/default.css"></div></div></article><script type="text/javascript">var disqus_shortname="donaldxy",disqus_identifier="/mysql-note-a02",disqus_url="https://czqu.cc/mysql-note-a02.html";!function(){if(is_global){var e=document.createElement("script");e.type="text/javascript",e.async=!0,e.src="//"+disqus_shortname+".disqus.com/embed.js",(document.getElementsByTagName("head")[0]||document.getElementsByTagName("body")[0]).appendChild(e)}else document.getElementById("disqus_comment").style.display="none"}()</script><script>if(is_global)document.getElementById("gitmentContainer").style.display="none";else{var gitment=new Gitment({id:"/mysql-note-a02.html",owner:"czqu",repo:"czqu.github.io",oauth:{client_id:"23a9781cae2172c5d591",client_secret:"4493f8b5c72f024f1a7b79d556b7e43599f918ed"}});gitment.render("gitmentContainer")}</script><script>function async(e,n){var t=document,a="script",r=t.createElement(a),c=t.getElementsByTagName(a)[0];r.src=e,n&&r.addEventListener("load",function(e){n(null,e)},!1),c.parentNode.insertBefore(r,c)}</script><script>async("/js/anchor.min.js",function(){anchors.options={visible:"hover",placement:"right"},anchors.add().remove(".intro-header h1").remove(".subheading").remove(".sidebar-container h5")})</script><style>@media all and (min-width:800px){.anchorjs-link{position:absolute;left:-.75em;font-size:1.1em;margin-top:-.1em}}</style><footer><div class="container"><div class="row"><div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1"><ul class="list-inline text-center"><li><a id="rss" href="/feed.xml"><span class="fa-stack fa-lg"><i class="fa fa-circle fa-stack-2x"></i> <i class="fa fa-rss fa-stack-1x fa-inverse"></i></span></a></li><li><a target="_blank" href="https://www.zhihu.com/people/czqu"><span class="fa-stack fa-lg"><i class="fa fa-circle fa-stack-2x"></i> <i class="fa fa-stack-1x fa-inverse">知</i></span></a></li><li><a target="_blank" href="https://blog.csdn.net/weixin_44409903"><span class="fa-stack fa-lg"><i class="fa fa-circle fa-stack-2x"></i> <i class="fa fa-stack-1x fa-inverse">C</i></span></a></li></ul><p class="copyright text-muted">Copyright &copy; Czq's Blog 2020<br><a id="switchsite" href="https://blog.xiyuan.ren/">国内访问</a> &nbsp; &nbsp;&nbsp; <a href="/license.html">许可协议 License</a><script type="text/javascript">var linkobj=document.getElementById("switchsite");current_url=window.location.href,is_global?(target_url=replacedomain(current_url,document.domain,"blog.czqu.ren"),linkobj.href=target_url,linkobj.innerText="国内访问"):(target_url=replacedomain(current_url,document.domain,"czqu.cc"),linkobj.href=target_url,linkobj.innerText="海外访问")</script></p></div></div></div></footer><script src="/js/jquery.min.js"></script><script src="/js/bootstrap.min.js"></script><script src="/js/hux-blog.min.js"></script><script src="/js/snackbar.js"></script><script src="/js/sw-registration.js"></script><script>function async(e,n){var t=document,a="script",r=t.createElement(a),c=t.getElementsByTagName(a)[0];r.src=e,n&&r.addEventListener("load",function(e){n(null,e)},!1),c.parentNode.insertBefore(r,c)}</script><script>async("/js/fastclick.min.js",function(){var c=document.querySelector("nav");c&&FastClick.attach(c)})</script><script>var _gaId="UA-171260366-1",_gaDomain="czqu.cc";_gaDomain=is_global?(_gaId="UA-171260366-1","czqu.cc"):(_gaId="UA-171260366-2","blog.czqu.ren"),function(a,e,g,c,n,o,t){a.GoogleAnalyticsObject=n,a.ga=a.ga||function(){(a.ga.q=a.ga.q||[]).push(arguments)},a.ga.l=1*new Date,o=e.createElement(g),t=e.getElementsByTagName(g)[0],o.async=1,o.src="//www.google-analytics.com/analytics.js",t.parentNode.insertBefore(o,t)}(window,document,"script",0,"ga"),ga("create",_gaId,_gaDomain),ga("send","pageview")</script><script>var _baId="202567f05f85026a62a117eec19b4a09",linkobj=document.getElementById("switchsite");_baId=is_global?"202567f05f85026a62a117eec19b4a09":"496677e3ceac55257d74003c6c3c2f3b";var _hmt=_hmt||[];!function(){var e=document.createElement("script");e.src="//hm.baidu.com/hm.js?"+_baId;var a=document.getElementsByTagName("script")[0];a.parentNode.insertBefore(e,a)}()</script><script type="text/javascript">function generateCatalog(e){var a,l,n,t,o,c;return _containerSelector="div.post-container",a=$(_containerSelector).find("h1,h2,h3,h4,h5,h6"),$(e).html(""),a.each(function(){l=$(this).prop("tagName").toLowerCase(),o="#"+$(this).prop("id"),n=$(this).text(),c=$('<a href="'+o+'" rel="nofollow">'+n+"</a>"),t=$('<li class="'+l+'_nav"></li>').append(c),$(e).append(t)}),!0}generateCatalog(".catalog-body"),$(".catalog-toggle").click(function(e){e.preventDefault(),$(".side-catalog").toggleClass("fold")}),async("/js/jquery.nav.js",function(){$(".catalog-body").onePageNav({currentClass:"active",changeHash:!1,easing:"swing",filter:"",scrollSpeed:700,scrollOffset:0,scrollThreshold:.2,begin:null,end:null,scrollChange:null,padding:80})})</script><img src="/img/icon_wechat.png" width="0" height="0"></body></html>
