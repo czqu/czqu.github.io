@@ -1,0 +1,9 @@
+User-agent: *
+Disallow: /_includes/*
+Disallow: /_layouts/*
+Disallow: /_posts/*
+Disallow: /baidu*
+Disallow: /js/*
+Allow: /index.html
+
+sitemap: https://czqu.cc/sitemap.xml

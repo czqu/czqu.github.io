@@ -1,0 +1,914 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="google-site-verification" content="xBT4GhYoi5qRD5tr338pgPM5OWHHIDR6mNg1a3euekI" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    
+    <meta name="description" content="关于程序与设计| Software Engineer | 这里是 @czqu  的个人博客，与你一起发现更大的世界。">
+    
+    <meta name="keywords"  content="czq's Blog,  博客, 个人网站, 互联网, java,Linux,Web">
+    <meta name="theme-color" content="#000000">
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="About - Czq's Blog">
+    
+    <meta property="og:type" content="website">
+    <meta property="og:description" content="你是我的梦想">
+    
+    <meta property="og:image" content="https://czqu.cc/img/avatar-boy.webp">
+    <meta property="og:url" content="https://czqu.cc/about/">
+    <meta property="og:site_name" content="Czq's Blog">
+    
+    <title>About - Czq's Blog</title>
+
+    <!-- Web App Manifest -->
+    <link rel="manifest" href="/pwa/manifest.json">
+
+    <!-- Favicon -->
+    <link rel="shortcut icon" href="/img/favicon.ico">
+    
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://czqu.cc/about/">
+
+    <!-- Bootstrap Core CSS -->
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/hux-blog.min.css">
+
+    <!-- Custom Fonts -->
+    <!-- <link href="http://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" rel="stylesheet" type="text/css"> -->
+    <!-- Hux change font-awesome CDN to qiniu -->
+    <link href="/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+
+
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+        <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+
+    <!-- ga & ba script hoook -->
+    <script></script>
+</head>
+
+
+<!-- hack iOS CSS :active style -->
+<body ontouchstart="">
+<script src="/js/qin-blog.js" type="text/javascript"></script>
+    <!-- Navigation -->
+
+<nav class="navbar navbar-default navbar-custom navbar-fixed-top">
+
+    <div class="container-fluid">
+        <!-- Brand and toggle get grouped for better mobile display -->
+        <div class="navbar-header page-scroll">
+            <button type="button" class="navbar-toggle">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">Czq's Blog</a>
+        </div>
+
+        <!-- Collect the nav links, forms, and other content for toggling -->
+        <div id="huxblog_navbar">
+            <div class="navbar-collapse">
+                <ul class="nav navbar-nav navbar-right">
+                    <li>
+                        <a href="/">Home</a>
+                    </li>
+                    
+                    
+                    
+                    
+                    <li>
+                        <a href="/about/">About</a>
+                    </li>
+                    
+                    
+                    
+                    <li>
+                        <a href="/archive/">Archive</a>
+                    </li>
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                </ul>
+            </div>
+        </div>
+        <!-- /.navbar-collapse -->
+    </div>
+    <!-- /.container -->
+</nav>
+<script>
+    // Drop Bootstarp low-performance Navbar
+    // Use customize navbar with high-quality material design animation
+    // in high-perf jank-free CSS3 implementation
+    var $body   = document.body;
+    var $toggle = document.querySelector('.navbar-toggle');
+    var $navbar = document.querySelector('#huxblog_navbar');
+    var $collapse = document.querySelector('.navbar-collapse');
+
+    var __HuxNav__ = {
+        close: function(){
+            $navbar.className = " ";
+            // wait until animation end.
+            setTimeout(function(){
+                // prevent frequently toggle
+                if($navbar.className.indexOf('in') < 0) {
+                    $collapse.style.height = "0px"
+                }
+            },400)
+        },
+        open: function(){
+            $collapse.style.height = "auto"
+            $navbar.className += " in";
+        }
+    }
+
+    // Bind Event
+    $toggle.addEventListener('click', function(e){
+        if ($navbar.className.indexOf('in') > 0) {
+            __HuxNav__.close()
+        }else{
+            __HuxNav__.open()
+        }
+    })
+
+    /**
+     * Since Fastclick is used to delegate 'touchstart' globally
+     * to hack 300ms delay in iOS by performing a fake 'click',
+     * Using 'e.stopPropagation' to stop 'touchstart' event from 
+     * $toggle/$collapse will break global delegation.
+     * 
+     * Instead, we use a 'e.target' filter to prevent handler
+     * added to document close HuxNav.  
+     *
+     * Also, we use 'click' instead of 'touchstart' as compromise
+     */
+    document.addEventListener('click', function(e){
+        if(e.target == $toggle) return;
+        if(e.target.className == 'icon-bar') return;
+        __HuxNav__.close();
+    })
+</script>
+
+    <!-- Page Header -->
+
+
+
+
+
+
+
+
+<header class="intro-header" style="background-image: url('/img/about-bg.jpg')">
+  <div class="container">
+    <div class="row">
+      <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+        
+        <div class="site-heading">
+        
+          <h1>About</h1>
+          <span class="subheading">你是我的梦想</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+
+
+<!-- Main Content -->
+<div class="container">
+	<div class="row">
+        
+
+<!-- USE SIDEBAR -->
+    <!-- PostList Container -->
+    		<div class="
+                col-lg-8 col-lg-offset-1
+                col-md-8 col-md-offset-1
+                col-sm-12
+                col-xs-12
+                postlist-container
+            ">
+    			                <!-- Language Selector -->
+                <select class="sel-lang" onchange= "onLanChange(this.options[this.options.selectedIndex].value)">
+                    <option value="0" selected> 中文 | Chinese </option>
+                    <option value="1"> 英文 | English </option>
+                </select>
+
+
+
+<!-- Chinese Version -->
+<div class="zh post-container">
+    
+    <blockquote>
+  <p>离开世界之前，一切都是过程。</p>
+</blockquote>
+
+<p>Hi，我是Czqu</p>
+
+
+</div>
+
+<!-- English Version -->
+<div class="en post-container">
+    
+    <blockquote>
+  <p>Your time is limited, so don’t waste it living someone else’s life.</p>
+</blockquote>
+
+<p>Hi, I am  @Czqu</p>
+
+</div>
+
+
+
+<!-- disqus 评论框 start -->
+<div class="comment">
+    <div id="disqus_thread" class="disqus-thread">
+
+    </div>
+</div>
+<!-- disqus 评论框 end -->
+
+<!-- disqus 公共JS代码 start (一个网页只需插入一次) -->
+<script type="text/javascript">
+    /* * * CONFIGURATION VARIABLES * * */
+    var disqus_shortname = "donaldxy";
+    var disqus_identifier = "donaldxy//about/";
+    var disqus_url = "https://czqu.cc/about/";
+
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<!-- disqus 公共JS代码 end -->
+
+
+    		</div>
+    <!-- Sidebar Container -->
+            <div class="
+                col-lg-3 col-lg-offset-0
+                col-md-3 col-md-offset-0
+                col-sm-12
+                col-xs-12
+                sidebar-container
+            ">
+                <!-- Featured Tags -->
+                
+<!--3d 
+<style type="text/css" media="screen">
+    html, body {
+        width: 100%;
+        height: 100%;
+    }
+    #wraptag {
+        position: relative;
+        left: 50%;
+        top:  50%;
+        /*text-align: center;*/
+    }
+    #wraptag .tag {
+        display: inline-block;
+        position:absolute;
+        /*width: 50px;*/
+        height: 50px;
+        line-height: 50px;
+        font-size: 20px;
+        text-decoration: none;
+        /*left: 10px;*/
+
+    }
+</style>
+tag-->
+<!-- Html Elements for Search -->
+<div class="dropdown navbar-form navbar-right ">
+ <input  id="search-input" name="word" type="text"  aria-haspopup="true" aria-expanded="false" data-toggle="dropdown" class="form-control typeahead"   placeholder="搜索">
+
+ <ul class="dropdown-menu" aria-labelledby="dLabel" id="results-container">
+
+ </ul>
+</div>
+
+<!-- Script pointing to jekyll-search.js -->
+<script src="/js/simple-jekyll-search.js" type="text/javascript"></script>
+
+<script>
+  window.simpleJekyllSearch = new SimpleJekyllSearch({
+    searchInput: document.getElementById('search-input'),
+    resultsContainer: document.getElementById('results-container'),
+    json: '/search.json',
+    searchResultTemplate: '<li><a href="{url}" title="{desc}">{title}</a></li>', // 文章列表模板
+    noResultsText: '没有搜索到文章', // 无搜索数据提示语
+    limit: 20, // 返回最大文章数
+    fuzzy: true // 是否模糊匹配
+})
+</script>
+<!----3d tag
+
+
+<section>
+    
+   
+    <h5><a href="/archive/">FEATURED TAGS</a></h5>
+    <div id="wraptag">
+        
+        
+        
+        
+        
+        
+                <a data-sort="0025" 
+                    href="/archive/?tag=Linux"
+                    title="Linux"
+                    class="tag"
+                    rel="3">Linux</a>
+        
+                <a data-sort="0018" 
+                    href="/archive/?tag=cpp"
+                    title="cpp"
+                    class="tag"
+                    rel="10">cpp</a>
+        
+                <a data-sort="0020" 
+                    href="/archive/?tag=%E7%AE%97%E6%B3%95"
+                    title="算法"
+                    class="tag"
+                    rel="8">算法</a>
+        
+                <a data-sort="0022" 
+                    href="/archive/?tag=%E5%90%8E%E7%AB%AF"
+                    title="后端"
+                    class="tag"
+                    rel="6">后端</a>
+        
+                <a data-sort="0022" 
+                    href="/archive/?tag=%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84"
+                    title="数据结构"
+                    class="tag"
+                    rel="6">数据结构</a>
+        
+                <a data-sort="0024" 
+                    href="/archive/?tag=%E6%80%A7%E8%83%BD"
+                    title="性能"
+                    class="tag"
+                    rel="4">性能</a>
+        
+                <a data-sort="0024" 
+                    href="/archive/?tag=mysql"
+                    title="mysql"
+                    class="tag"
+                    rel="4">mysql</a>
+        
+                <a data-sort="0026" 
+                    href="/archive/?tag=%E4%BA%8C%E8%BF%9B%E5%88%B6"
+                    title="二进制"
+                    class="tag"
+                    rel="2">二进制</a>
+        
+                <a data-sort="0026" 
+                    href="/archive/?tag=%E4%BF%A1%E6%81%AF%E5%AE%89%E5%85%A8"
+                    title="信息安全"
+                    class="tag"
+                    rel="2">信息安全</a>
+        
+                <a data-sort="0026" 
+                    href="/archive/?tag=%E5%89%8D%E7%AB%AF"
+                    title="前端"
+                    class="tag"
+                    rel="2">前端</a>
+        
+                <a data-sort="0026" 
+                    href="/archive/?tag=%E9%93%BE%E8%A1%A8"
+                    title="链表"
+                    class="tag"
+                    rel="2">链表</a>
+        
+                <a data-sort="0026" 
+                    href="/archive/?tag=java"
+                    title="java"
+                    class="tag"
+                    rel="2">java</a>
+        
+                <a data-sort="0026" 
+                    href="/archive/?tag=kali"
+                    title="kali"
+                    class="tag"
+                    rel="2">kali</a>
+        
+                <a data-sort="0026" 
+                    href="/archive/?tag=linux"
+                    title="linux"
+                    class="tag"
+                    rel="2">linux</a>
+    </div>
+</section>
+
+<script type="text/javascript" src="../js/cloudTag.js"></script>
+-->
+
+
+<section>
+    
+    <h5><a href="/archive/">FEATURED TAGS</a></h5>
+    <div class="tags">
+        
+        
+        
+        
+        
+        
+                <a data-sort="0025" 
+                    href="/archive/?tag=Linux"
+                    title="Linux"
+                    rel="3">Linux</a>
+        
+                <a data-sort="0018" 
+                    href="/archive/?tag=cpp"
+                    title="cpp"
+                    rel="10">cpp</a>
+        
+                <a data-sort="0020" 
+                    href="/archive/?tag=%E7%AE%97%E6%B3%95"
+                    title="算法"
+                    rel="8">算法</a>
+        
+                <a data-sort="0022" 
+                    href="/archive/?tag=%E5%90%8E%E7%AB%AF"
+                    title="后端"
+                    rel="6">后端</a>
+        
+                <a data-sort="0022" 
+                    href="/archive/?tag=%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84"
+                    title="数据结构"
+                    rel="6">数据结构</a>
+        
+                <a data-sort="0024" 
+                    href="/archive/?tag=%E6%80%A7%E8%83%BD"
+                    title="性能"
+                    rel="4">性能</a>
+        
+                <a data-sort="0024" 
+                    href="/archive/?tag=mysql"
+                    title="mysql"
+                    rel="4">mysql</a>
+        
+                <a data-sort="0026" 
+                    href="/archive/?tag=%E4%BA%8C%E8%BF%9B%E5%88%B6"
+                    title="二进制"
+                    rel="2">二进制</a>
+        
+                <a data-sort="0026" 
+                    href="/archive/?tag=%E4%BF%A1%E6%81%AF%E5%AE%89%E5%85%A8"
+                    title="信息安全"
+                    rel="2">信息安全</a>
+        
+                <a data-sort="0026" 
+                    href="/archive/?tag=%E5%89%8D%E7%AB%AF"
+                    title="前端"
+                    rel="2">前端</a>
+        
+                <a data-sort="0026" 
+                    href="/archive/?tag=%E9%93%BE%E8%A1%A8"
+                    title="链表"
+                    rel="2">链表</a>
+        
+                <a data-sort="0026" 
+                    href="/archive/?tag=java"
+                    title="java"
+                    rel="2">java</a>
+        
+                <a data-sort="0026" 
+                    href="/archive/?tag=kali"
+                    title="kali"
+                    rel="2">kali</a>
+        
+                <a data-sort="0026" 
+                    href="/archive/?tag=linux"
+                    title="linux"
+                    rel="2">linux</a>
+    </div>
+</section>
+
+
+
+                <!-- Short About -->
+                <section class="visible-md visible-lg">
+  <hr>
+  <h5><a href="/about/">ABOUT ME</a></h5>
+  <div class="short-about">
+    
+    <img src="/img/avatar-boy.webp" />
+    
+    
+    <p>For the next quantum leap<br>离开世界之前，一切都是过程</p>
+    
+    <!-- SNS Link -->
+    
+
+
+  <ul class="list-inline">
+    
+
+    
+    <li>
+      <a id="rss"  href="/feed.xml">
+        
+      </script>
+        <span class="fa-stack fa-lg">
+        <i class="fa fa-circle fa-stack-2x"></i>
+        <i class="fa fa-rss fa-stack-1x fa-inverse"></i>
+        </span>
+        </a>
+        </li>
+        
+        
+        
+        <li>
+        <a target="_blank" href="https://www.zhihu.com/people/czqu">
+        <span class="fa-stack fa-lg">
+        <i class="fa fa-circle fa-stack-2x"></i>
+        <i class="fa  fa-stack-1x fa-inverse">知</i>
+        </span>
+        </a>
+        </li>
+        
+        
+        
+        
+        
+        
+        <li>
+        <a target="_blank" href="https://blog.csdn.net/weixin_44409903">
+        <span class="fa-stack fa-lg">
+        <i class="fa fa-circle fa-stack-2x"></i>
+        <i class="fa  fa-stack-1x fa-inverse">C</i>
+        </span>
+        </a>
+        </li>
+        
+        </ul>
+  </div>
+</section>
+
+                <!-- Friends Blog -->
+                
+<hr>
+<h5>FRIENDS</h5>
+<ul class="list-inline">
+  
+  <li><a href="https://2084team.cn/">2084 Team</a></li>
+  
+</ul>
+
+    		</div>
+        
+	</div>
+</div>
+
+
+<!-- Add support for Mathjax by Voleking-->
+<!-- If you want to see formulars well in post preview, Maybe you should add this.-->
+<!-- However, most of the time formulars may not appear in the post preview, you can delete it.-->
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({
+    TeX: {
+      equationNumbers: {
+        autoNumber: "AMS"
+      }
+    },
+    tex2jax: {
+      inlineMath: [ ['$','$'] ],
+      displayMath: [ ['$$','$$'] ],
+      processEscapes: true,
+    }
+  });
+</script>
+<script type="text/javascript"
+        src="/js/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+
+
+    <!-- Footer -->
+<footer>
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <!-- SNS Link -->
+                
+
+
+<ul class="list-inline text-center">
+  
+
+    
+    <li>
+      <a id="rss"  href="/feed.xml">
+        
+      </script>
+        <span class="fa-stack fa-lg">
+        <i class="fa fa-circle fa-stack-2x"></i>
+        <i class="fa fa-rss fa-stack-1x fa-inverse"></i>
+        </span>
+        </a>
+        </li>
+        
+        
+        
+        <li>
+        <a target="_blank" href="https://www.zhihu.com/people/czqu">
+        <span class="fa-stack fa-lg">
+        <i class="fa fa-circle fa-stack-2x"></i>
+        <i class="fa  fa-stack-1x fa-inverse">知</i>
+        </span>
+        </a>
+        </li>
+        
+        
+        
+        
+        
+        
+        <li>
+        <a target="_blank" href="https://blog.csdn.net/weixin_44409903">
+        <span class="fa-stack fa-lg">
+        <i class="fa fa-circle fa-stack-2x"></i>
+        <i class="fa  fa-stack-1x fa-inverse">C</i>
+        </span>
+        </a>
+        </li>
+        
+        </ul>
+
+                <p class="copyright text-muted">
+                    Copyright &copy; Czq's Blog 2020
+                    <br>  <a id='switchsite' href='https://blog.xiyuan.ren/'> 国内访问</a> &nbsp; &nbsp;&nbsp;
+                    <a  href='/license/'>许可协议  License </a>
+                    <script type="text/javascript">
+                        {
+
+                            var linkobj= document.getElementById("switchsite");
+                            current_url = window.location.href;
+
+
+
+
+                            if(is_global)
+                            {
+                                target_url = replacedomain(current_url,document.domain,"blog.czqu.ren");
+                                
+                                linkobj.href =target_url;  
+                                linkobj.innerText ='国内访问';
+
+                            }else
+                            {
+                             target_url = replacedomain(current_url,document.domain,"czqu.cc");
+                            
+                             linkobj.href =target_url; 
+                             linkobj.innerText ='海外访问';
+
+                         }
+
+
+
+
+
+                     }
+
+                 </script>
+             </p>
+         </div>
+     </div>
+ </div>
+</footer>
+
+<!-- jQuery -->
+<script src="/js/jquery.min.js "></script>
+
+<!-- Bootstrap Core JavaScript -->
+<!-- Currently, only navbar scroll-down effect at desktop still depends on this -->
+<script src="/js/bootstrap.min.js "></script>
+
+<!-- Custom Theme JavaScript -->
+<script src="/js/hux-blog.min.js "></script>
+
+<!-- Service Worker -->
+
+<script src="/js/snackbar.js "></script>
+<script src="/js/sw-registration.js "></script>
+
+
+<!-- async load function -->
+<script>
+    function async(u, c) {
+        var d = document, t = 'script',
+        o = d.createElement(t),
+        s = d.getElementsByTagName(t)[0];
+        o.src = u;
+        if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+        s.parentNode.insertBefore(o, s);
+    }
+</script>
+
+<!--
+     Because of the native support for backtick-style fenced code blocks
+     right within the Markdown is landed in Github Pages,
+     From V1.6, There is no need for Highlight.js,
+     so Huxblog drops it officially.
+
+     - https://github.com/blog/2100-github-pages-now-faster-and-simpler-with-jekyll-3-0
+     - https://help.github.com/articles/creating-and-highlighting-code-blocks/
+     - https://github.com/jneen/rouge/wiki/list-of-supported-languages-and-lexers
+ -->
+<!--
+    <script>
+        async("http://cdn.bootcss.com/highlight.js/8.6/highlight.min.js", function(){
+            hljs.initHighlightingOnLoad();
+        })
+    </script>
+    <link href="http://cdn.bootcss.com/highlight.js/8.6/styles/github.min.css" rel="stylesheet">
+-->
+
+
+
+
+
+
+
+<!--fastClick.js -->
+<script>
+    async("/js/fastclick.min.js", function () {
+        var $nav = document.querySelector("nav");
+        if ($nav) FastClick.attach($nav);
+    })
+</script>
+
+
+<!-- Google Analytics -->
+
+
+<script>
+ var _gaId = 'UA-171260366-1';
+ var _gaDomain = 'czqu.cc';
+
+
+ if(!is_global)
+ {
+    _gaId = 'UA-171260366-2';
+    _gaDomain = 'blog.czqu.ren';
+}
+else
+{
+ _gaId = 'UA-171260366-1';
+ _gaDomain = 'czqu.cc';
+}
+
+
+
+
+
+
+
+
+
+    // Originial
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r; i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date(); a = s.createElement(o),
+        m = s.getElementsByTagName(o)[0]; a.async = 1; a.src = g; m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+
+    ga('create', _gaId, _gaDomain);
+    ga('send', 'pageview');
+</script>
+
+
+
+<!-- Baidu Tongji -->
+
+<script>
+    // dynamic User by Hux
+    var _baId = '202567f05f85026a62a117eec19b4a09';
+    var linkobj= document.getElementById("switchsite");
+    if(!is_global)
+    {
+        _baId = '496677e3ceac55257d74003c6c3c2f3b';
+    }
+    else
+    {
+     _baId = '202567f05f85026a62a117eec19b4a09';
+
+ }
+
+    // Originial
+    var _hmt = _hmt || [];
+    (function () {
+        var hm = document.createElement("script");
+        hm.src = "//hm.baidu.com/hm.js?" + _baId;
+        var s = document.getElementsByTagName("script")[0];
+        s.parentNode.insertBefore(hm, s);
+    })();
+</script>
+
+
+
+<!-- Side Catalog -->
+
+
+
+<!-- Multi-Lingual -->
+
+<!-- Handle Language Change -->
+<script type="text/javascript">
+    // get nodes
+    var $zh = document.querySelector(".zh");
+    var $en = document.querySelector(".en");
+    var $select = document.querySelector("select");
+
+    // Changes at v1.8.1: include lang flag as a url query. This interop well with catalog hash anchors.
+    function getLang() { return new URLSearchParams(document.location.search).get("lang") }
+
+    function setLang(newLang) {
+        var params = new URLSearchParams(document.location.search)
+        params.set("lang", newLang)
+        document.location.search = params.toString()  // refresh.
+    }
+
+    // handle render
+    function _render() {
+        var lang = getLang()
+        // en
+        if (lang == "en") {
+            $select.selectedIndex = 1;
+            $en.style.display = "block";
+            $en.classList.add("active");
+            $zh.style.display = "none";
+            $zh.classList.remove("active");
+            // default to zh-cn
+        } else {
+            $select.selectedIndex = 0;
+            $zh.style.display = "block";
+            $zh.classList.add("active");
+            $en.style.display = "none";
+            $en.classList.remove("active");
+        }
+        // interop with catalog 
+        if ("") generateCatalog(".catalog-body");
+    }
+
+    // handle select change
+    function onLanChange(index) {
+        if (index == 0) {
+            lang = "zh"
+        } else {
+            lang = "en"
+        }
+        setLang(lang)
+    }
+
+    // init
+    _render();
+</script>
+
+
+
+<!-- Image to hack wechat -->
+<img src="/img/icon_wechat.png" width="0" height="0" />
+<!-- Migrate from head to bottom, no longer block render and still work -->
+
+</body>
+
+</html>

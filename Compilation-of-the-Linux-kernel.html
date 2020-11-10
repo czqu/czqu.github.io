@@ -1,0 +1,1276 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="google-site-verification" content="xBT4GhYoi5qRD5tr338pgPM5OWHHIDR6mNg1a3euekI" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    
+    <meta name="description" content="
+  前言：
+
+  常见 Linux 内核编译有两种方式，一是直接在 Linux 系统上编译得到二进制文件，并对原有 Linux 内核进行替换，即更换 Linux 内核，此方法可能因新内核有 bug 导致系统奔溃，且难以返回原版本内核而不得不重装；第二种方法则是在模拟器中运行新的 Linux 内核，以避免对系统内核的修改。
+
+  BusyBox 是一个集成了三百多个最常用 Linux 命令和工具的软件，因为单独的 Linux 内核无任何用于用户交互的 UI，所以需要通过其它工具与新编译的Linux 内核交互。
+
+  QEMU 是以 GPL 许可证分发源码的模拟处理器，可用于模拟常见的硬件...">
+    
+    <meta name="keywords"  content="czq's Blog,  博客, 个人网站, 互联网, java,Linux,Web">
+    <meta name="theme-color" content="#000000">
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="Linux内核的编译 - Czq's Blog">
+    
+    <meta property="og:type" content="article">
+    <meta property="og:description" content="
+  前言：
+
+  常见 Linux 内核编译有两种方式，一是直接在 Linux 系统上编译得到二进制文件，并对原有 Linux 内核进行替换，即更换 Linux 内核，此方法可能因新内核有 bug 导致系统奔溃，且难以返回原版本内核而不得不重装；第二种方法则是在模拟器中运行新的 Linux 内核，以避免对系统内核的修改。
+
+  BusyBox 是一个集成了三百多个最常用 Linux 命令和...">
+    
+    <meta property="article:published_time" content="2020-03-03T18:00:00Z">
+    
+    
+    <meta property="article:author" content="czqu">
+    
+    
+    <meta property="article:tag" content="Linux">
+    
+    <meta property="article:tag" content="操作系统">
+    
+    <meta property="article:tag" content="cpp">
+    
+    
+    <meta property="og:image" content="https://czqu.cc/img/avatar-boy.webp">
+    <meta property="og:url" content="https://czqu.cc/Compilation-of-the-Linux-kernel.html">
+    <meta property="og:site_name" content="Czq's Blog">
+    
+    <title>Linux内核的编译 - Czq's Blog</title>
+
+    <!-- Web App Manifest -->
+    <link rel="manifest" href="/pwa/manifest.json">
+
+    <!-- Favicon -->
+    <link rel="shortcut icon" href="/img/favicon.ico">
+    
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://czqu.cc/Compilation-of-the-Linux-kernel.html">
+
+    <!-- Bootstrap Core CSS -->
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/hux-blog.min.css">
+
+    <!-- Custom Fonts -->
+    <!-- <link href="http://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" rel="stylesheet" type="text/css"> -->
+    <!-- Hux change font-awesome CDN to qiniu -->
+    <link href="/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+
+
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+        <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+
+    <!-- ga & ba script hoook -->
+    <script></script>
+</head>
+
+
+<!-- hack iOS CSS :active style -->
+<body ontouchstart="">
+<script src="/js/qin-blog.js" type="text/javascript"></script>
+    <!-- Navigation -->
+
+<nav class="navbar navbar-default navbar-custom navbar-fixed-top">
+
+    <div class="container-fluid">
+        <!-- Brand and toggle get grouped for better mobile display -->
+        <div class="navbar-header page-scroll">
+            <button type="button" class="navbar-toggle">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">Czq's Blog</a>
+        </div>
+
+        <!-- Collect the nav links, forms, and other content for toggling -->
+        <div id="huxblog_navbar">
+            <div class="navbar-collapse">
+                <ul class="nav navbar-nav navbar-right">
+                    <li>
+                        <a href="/">Home</a>
+                    </li>
+                    
+                    
+                    
+                    
+                    <li>
+                        <a href="/about/">About</a>
+                    </li>
+                    
+                    
+                    
+                    <li>
+                        <a href="/archive/">Archive</a>
+                    </li>
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                </ul>
+            </div>
+        </div>
+        <!-- /.navbar-collapse -->
+    </div>
+    <!-- /.container -->
+</nav>
+<script>
+    // Drop Bootstarp low-performance Navbar
+    // Use customize navbar with high-quality material design animation
+    // in high-perf jank-free CSS3 implementation
+    var $body   = document.body;
+    var $toggle = document.querySelector('.navbar-toggle');
+    var $navbar = document.querySelector('#huxblog_navbar');
+    var $collapse = document.querySelector('.navbar-collapse');
+
+    var __HuxNav__ = {
+        close: function(){
+            $navbar.className = " ";
+            // wait until animation end.
+            setTimeout(function(){
+                // prevent frequently toggle
+                if($navbar.className.indexOf('in') < 0) {
+                    $collapse.style.height = "0px"
+                }
+            },400)
+        },
+        open: function(){
+            $collapse.style.height = "auto"
+            $navbar.className += " in";
+        }
+    }
+
+    // Bind Event
+    $toggle.addEventListener('click', function(e){
+        if ($navbar.className.indexOf('in') > 0) {
+            __HuxNav__.close()
+        }else{
+            __HuxNav__.open()
+        }
+    })
+
+    /**
+     * Since Fastclick is used to delegate 'touchstart' globally
+     * to hack 300ms delay in iOS by performing a fake 'click',
+     * Using 'e.stopPropagation' to stop 'touchstart' event from 
+     * $toggle/$collapse will break global delegation.
+     * 
+     * Instead, we use a 'e.target' filter to prevent handler
+     * added to document close HuxNav.  
+     *
+     * Also, we use 'click' instead of 'touchstart' as compromise
+     */
+    document.addEventListener('click', function(e){
+        if(e.target == $toggle) return;
+        if(e.target.className == 'icon-bar') return;
+        __HuxNav__.close();
+    })
+</script>
+
+    <!-- Image to hack wechat -->
+<!-- <img src="/img/icon_wechat.png" width="0" height="0"> -->
+<!-- <img src="/img/home-bg-notdimmed.webp" width="0" height="0"> -->
+
+<!-- Post Header -->
+
+
+
+<style type="text/css">
+    header.intro-header{
+        position: relative;
+        background-image: url('/img/home-bg-notdimmed.webp');
+        background: ;
+    }
+
+    
+</style>
+
+<header class="intro-header" >
+
+    <div class="header-mask"></div>
+    
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <div class="post-heading">
+                    <div class="tags">
+                        
+                        <a class="tag" href="/archive/?tag=Linux" title="Linux">Linux</a>
+                        
+                        <a class="tag" href="/archive/?tag=%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F" title="操作系统">操作系统</a>
+                        
+                        <a class="tag" href="/archive/?tag=cpp" title="cpp">cpp</a>
+                        
+                    </div>
+                    <h1>Linux内核的编译</h1>
+                    
+                    <h2 class="subheading"></h2>
+                    <span class="meta">Posted by czqu on March 3, 2020</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+
+
+
+
+
+<!-- Post Content -->
+<article>
+    <div class="container">
+        <div class="row">
+
+    <!-- Post Container -->
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                post-container">
+
+                <!-- Multi-Lingual -->
+                
+
+				<blockquote>
+  <p>前言：</p>
+
+  <p>常见 Linux 内核编译有两种方式，一是直接在 Linux 系统上编译得到二进制文件，并对原有 Linux 内核进行替换，即更换 Linux 内核，此方法可能因新内核有 bug 导致系统奔溃，且难以返回原版本内核而不得不重装；第二种方法则是在模拟器中运行新的 Linux 内核，以避免对系统内核的修改。</p>
+
+  <p>BusyBox 是一个集成了三百多个最常用 Linux 命令和工具的软件，因为单独的 Linux 内核无任何用于用户交互的 UI，所以需要通过其它工具与新编译的Linux 内核交互。</p>
+
+  <p>QEMU 是以 GPL 许可证分发源码的模拟处理器，可用于模拟常见的硬件平台，常用于在 Linux 系统中建立虚拟机。</p>
+
+  <p>本文在阿里云 Ubuntu 18.04 64 位操作系统环境下编译 ARM Linux 内核。过程中主要是用交叉编译工具链 gcc-arm-linux-gnueabi 编译系统源码，并使用 QEMU 软件仿真硬件平台测试对象系统。</p>
+
+  <p>**建议使用 root 用户操作  **</p>
+</blockquote>
+
+<p><strong>本文所使用的环境：</strong></p>
+
+<blockquote>
+  <p>操作系统：4.15.0-96-generic #97-Ubuntu SMP Wed Apr 1 03:25:46 UTC 2020 x86_64 x86_64 x86_64 GNU/Linux</p>
+
+  <p>gcc: 7.5.0</p>
+
+  <p>qemu: 2.11.1(Debian 1:2.11+dfsg-1ubuntu7.26)</p>
+
+  <p>make:GNU Make 4.1</p>
+</blockquote>
+
+<ol>
+  <li>
+    <h5 id="工具准备">工具准备</h5>
+
+    <p>Busybox 需手动下载安装，QEMU 等其他工具可在线安装。</p>
+
+    <p>Linux内核下载：https://www.kernel.org/</p>
+
+    <p>本文使用5.4.45版本的,并使用清华大学镜像</p>
+
+    <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+</pre></td><td class="rouge-code"><pre>wget https://mirrors.tuna.tsinghua.edu.cn/kernel/v5.x/linux-5.4.5.tar.gz
+</pre></td></tr></tbody></table></code></pre></div>    </div>
+
+    <p>Busybox ：</p>
+
+    <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+</pre></td><td class="rouge-code"><pre>wget https://busybox.net/downloads/busybox-1.28.4.tar.bz2
+</pre></td></tr></tbody></table></code></pre></div>    </div>
+  </li>
+  <li>
+    <p>环境配置</p>
+
+    <p>Linux 内核编译环境需要大量软件包，可提前直接在线安装，或在内核编译的过程中安装，若缺少安装包，内核编译过程中会提示缺失错误。以下是部分需要的软件包，其中部分相同功能的软件包在不同的 Linux 版本下会以不同的名字存在。</p>
+
+    <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+</pre></td><td class="rouge-code"><pre>apt-get <span class="nb">install </span>gcc qemu qemu-system-arm gcc-arm-linux-gnueabi libncurses5-dev build-essential flex bison bc  
+</pre></td></tr></tbody></table></code></pre></div>    </div>
+
+    <p><img src="https://imgconvert.csdnimg.cn/aHR0cHM6Ly9pLmxvbGkubmV0LzIwMjAvMDYvMDgvbnZ6d0ViUDZjMzVObDh0LnBuZw?x-oss-process=image/format,png" alt="image-20200607225302378" /></p>
+  </li>
+  <li>
+    <h5 id="编译内核">编译内核</h5>
+
+    <p><strong>解压 Linux 内核文件包：</strong></p>
+
+    <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+</pre></td><td class="rouge-code"><pre><span class="nb">tar</span> <span class="nt">-xzvf</span> linux-5.4.5.tar.gz
+</pre></td></tr></tbody></table></code></pre></div>    </div>
+
+    <p><strong>编译最小文件系统：</strong></p>
+
+    <p>解压 busybox,进入目录并编译:</p>
+
+    <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+</pre></td><td class="rouge-code"><pre><span class="nb">tar</span> <span class="nt">-jxvf</span> busybox-1.28.4.tar.bz2
+<span class="nb">cd </span>busybox-1.28.4
+<span class="nb">export </span><span class="nv">ARCH</span><span class="o">=</span>arm
+<span class="nb">export </span><span class="nv">CROSS_COMPILE</span><span class="o">=</span>arm-linux-gnueabi-
+make menuconfig
+</pre></td></tr></tbody></table></code></pre></div>    </div>
+
+    <p>以上内容中，“export”后是指定交叉编译工具链，指定芯片框架为 ARM。如下图所示是图形化界面进行内核配置。</p>
+
+    <p><img src="https://imgconvert.csdnimg.cn/aHR0cHM6Ly9pLmxvbGkubmV0LzIwMjAvMDYvMDgvb0wydXdBSGtNOHJmSVVSLnBuZw?x-oss-process=image/format,png" alt="image-20200607231737776" /></p>
+
+    <blockquote>
+      <p>按照以下路径配置成静态编译（回车进入，空格选中） ：</p>
+
+      <p>Settings ----&gt;</p>
+
+      <p>　　Build Options
+　　　　　　　[*]Build static binary(no shared libs)</p>
+
+      <p><img src="https://imgconvert.csdnimg.cn/aHR0cHM6Ly9pLmxvbGkubmV0LzIwMjAvMDYvMDgvVGhwZW9meEh6REttQnZuLnBuZw?x-oss-process=image/format,png" alt="image-20200607232057964" /></p>
+    </blockquote>
+
+    <p>配置完毕退出后继续完成编译：</p>
+
+    <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+</pre></td><td class="rouge-code"><pre>make <span class="nb">install</span>  
+</pre></td></tr></tbody></table></code></pre></div>    </div>
+
+    <p>完成后会在目录中生成“_install”目录，本目录存放了编译好的文件系统需要的命令集合，如下图所示：</p>
+
+    <p><img src="https://imgconvert.csdnimg.cn/aHR0cHM6Ly9pLmxvbGkubmV0LzIwMjAvMDYvMDgvRWM3MWZ6bjU4aEJRVlkyLnBuZw?x-oss-process=image/format,png" alt="image-20200607233324632" /></p>
+
+    <p>将上一步骤中生成的“_install”目录拷贝至之前解压后的内核目录，进入“_install”目录，分别创建 etc、dev、mnt、etc/init.d 等目录。</p>
+
+    <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+</pre></td><td class="rouge-code"><pre><span class="nb">cp</span> <span class="nt">-r</span> ./busybox-1.28.4/_install ./linux-5.4.5/_install
+<span class="nb">cd</span> ./linux-5.4.5/_install/
+<span class="nb">mkdir </span>etc
+<span class="nb">mkdir </span>dev
+<span class="nb">mkdir </span>mnt
+<span class="nb">mkdir</span> <span class="nt">-p</span> etc/init.d
+</pre></td></tr></tbody></table></code></pre></div>    </div>
+
+    <p><img src="https://imgconvert.csdnimg.cn/aHR0cHM6Ly9pLmxvbGkubmV0LzIwMjAvMDYvMDgvVlR2RFJzNjlKN0lGdVFOLnBuZw?x-oss-process=image/format,png" alt="image-20200607234014872" /></p>
+
+    <p>在“_install/etc/init.d”目录下新建“rcS”文件，并写入以下内容：</p>
+
+    <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+</pre></td><td class="rouge-code"><pre><span class="nb">mkdir</span> <span class="nt">-p</span> /proc
+<span class="nb">mkdir</span> <span class="nt">-p</span> /tmp
+<span class="nb">mkdir</span> <span class="nt">-p</span> /sys
+<span class="nb">mkdir</span> <span class="nt">-p</span> /mnt
+/bin/mount <span class="nt">-a</span>
+<span class="nb">mkdir</span> <span class="nt">-p</span> /dev/pts
+mount <span class="nt">-t</span> devpts devpts /dev/pts
+<span class="nb">echo</span> /sbin/mdev <span class="o">&gt;</span> /proc/sys/kernel/hotplug
+mdev –s  
+</pre></td></tr></tbody></table></code></pre></div>    </div>
+
+    <p><img src="https://imgconvert.csdnimg.cn/aHR0cHM6Ly9pLmxvbGkubmV0LzIwMjAvMDYvMDgvYnZTb1R0T0VuZ1BobTdKLnBuZw?x-oss-process=image/format,png" alt="image-20200607234356567" /></p>
+
+    <p>在“_install/etc”目录创建“fstab”文件，并写入以下内容：</p>
+
+    <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+</pre></td><td class="rouge-code"><pre>proc /proc proc defaults 0 0
+tmpfs /tmp tmpfs defaults 0 0
+sysfs /sys sysfs defaults 0 0
+tempfs /dev tmpfs defaults 0 0
+debugfs /sys/kernel/debug debugfs defaults 0 0  
+</pre></td></tr></tbody></table></code></pre></div>    </div>
+
+    <p><img src="https://imgconvert.csdnimg.cn/aHR0cHM6Ly9pLmxvbGkubmV0LzIwMjAvMDYvMDgvOFNVTlBqbFl6aWhWREJBLnBuZw?x-oss-process=image/format,png" alt="image-20200607234653102" /></p>
+
+    <p>在“_install/etc”目录创建“inittab”文件，并写入以下内容：</p>
+
+    <pre><code class="language-bush">::sysinit:/etc/init.d/rcS
+::respawn:-/bin/sh
+::askfirst:-/bin/sh
+::ctrlaltdel:/bin/umount -a -r  
+</code></pre>
+
+    <p><img src="https://imgconvert.csdnimg.cn/aHR0cHM6Ly9pLmxvbGkubmV0LzIwMjAvMDYvMDgvS3ZOcGJaaUNUT1dxSHRhLnBuZw?x-oss-process=image/format,png" alt="image-20200607234926195" /></p>
+
+    <p>在“_install/dev”目录中创建如下设备节点。 ：</p>
+
+    <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+</pre></td><td class="rouge-code"><pre><span class="nb">mknod </span>console c 5 1
+<span class="nb">mknod </span>null c 1 3  
+</pre></td></tr></tbody></table></code></pre></div>    </div>
+
+    <p><img src="https://imgconvert.csdnimg.cn/aHR0cHM6Ly9pLmxvbGkubmV0LzIwMjAvMDYvMDgvNzV6aU04YUxyU0QyZXV2LnBuZw?x-oss-process=image/format,png" alt="image-20200607235200236" /></p>
+
+    <p>完成上述设置后，在内核目录中编译内核 ：</p>
+
+    <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+</pre></td><td class="rouge-code"><pre><span class="nb">export </span><span class="nv">ARCH</span><span class="o">=</span>arm
+<span class="nb">export </span><span class="nv">CROSS_COMPILE</span><span class="o">=</span>arm-linux-gnueabi-
+make vexpress_defconfig
+make menuconfig  
+</pre></td></tr></tbody></table></code></pre></div>    </div>
+
+    <p><img src="https://imgconvert.csdnimg.cn/aHR0cHM6Ly9pLmxvbGkubmV0LzIwMjAvMDYvMDgvdWJsUmNaVDlxVmZFRjROLnBuZw?x-oss-process=image/format,png" alt="image-20200607235445654" /></p>
+
+    <blockquote>
+      <p>make menuconfig 设置中，按照以下路径，在 initramfs source file 中填入“_install”(按回车填入) :
+General setup ----&gt;
+　　　　　　 [*]Initial RAM filesystem and RAM disk (initramfs/initrd) support
+　　　　　　　　　　　(_install)Initramfs source file(s)</p>
+
+      <p><img src="https://imgconvert.csdnimg.cn/aHR0cHM6Ly9pLmxvbGkubmV0LzIwMjAvMDYvMDgvYXN3NkpOT3hISUVvbWJqLnBuZw?x-oss-process=image/format,png" alt="image-20200607235912353" /></p>
+
+      <p>返回上一层，在</p>
+
+      <p>Boot option  ----&gt;
+　　　　()Default kernel command string</p>
+
+      <p>回车进入 Default kernel command string 并清 空 。 下 图 中 删 除 原 有 内 容 用
+Ctl+Backspace 键。</p>
+
+      <p><img src="https://imgconvert.csdnimg.cn/aHR0cHM6Ly9pLmxvbGkubmV0LzIwMjAvMDYvMDgvT0FGN3UyRWhLQ1dVWTZWLnBuZw?x-oss-process=image/format,png" alt="image-20200608000442154" /></p>
+
+      <p>配置 memory split 为“3G/1G user/kernel split”,并打开High Memory Support：</p>
+
+      <p>Kernel features ----&gt;
+　　　　Memory split(3G/1G user/kernel split) -
+　　　　[*] High Memory Support</p>
+
+      <p><img src="https://imgconvert.csdnimg.cn/aHR0cHM6Ly9pLmxvbGkubmV0LzIwMjAvMDYvMDgveGRBTERNSUd5c2lyTmE2LnBuZw?x-oss-process=image/format,png" alt="image-20200608000716572" /></p>
+    </blockquote>
+
+    <p>在内核目录下编译内核(此步骤时间较长)</p>
+
+    <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+</pre></td><td class="rouge-code"><pre>make bzImage <span class="nv">ARCH</span><span class="o">=</span>arm <span class="nv">CROSS_COMPILE</span><span class="o">=</span>arm-linux-gnueabi-
+make dtbs 
+</pre></td></tr></tbody></table></code></pre></div>    </div>
+
+    <blockquote>
+      <p>可能会出现“./usr/gen_initramfs_list.sh: 131: local: 1: bad variable name”的错误，原因是以前用的bash执行而现在使用sh。</p>
+
+      <p>解决办法：131行改为 ：</p>
+
+      <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+</pre></td><td class="rouge-code"><pre>local dev="`LC_ALL=C ls -l "${location}"`"
+</pre></td></tr></tbody></table></code></pre></div>      </div>
+
+      <p><img src="https://imgconvert.csdnimg.cn/aHR0cHM6Ly9pLmxvbGkubmV0LzIwMjAvMDYvMDgvcllBbTQ1blJNOUtVdXBaLnBuZw?x-oss-process=image/format,png" alt="image-20200608093024179" /></p>
+    </blockquote>
+
+    <p>编译完成后会有如下提示，并显示编译后内核的存储路径。</p>
+
+    <p><img src="https://imgconvert.csdnimg.cn/aHR0cHM6Ly9pLmxvbGkubmV0LzIwMjAvMDYvMDgvd3NTNkJ1eVV6ckdaZVEyLnBuZw?x-oss-process=image/format,png" alt="image-20200608003409578" /></p>
+  </li>
+  <li>
+    <h5 id="运行-qemu">运行 QEMU</h5>
+
+    <p>如下所示，输入 QEMU 启动命令，成功启动 QEMU，注意需指定 bzImage路径，并注意使用当前命令与 bzImage 路径的关系。</p>
+
+    <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+</pre></td><td class="rouge-code"><pre>qemu-system-arm <span class="nt">-M</span> vexpress-a9 <span class="nt">-m</span> 256M <span class="nt">-kernel</span> <span class="nb">arch</span>/arm/boot/zImage <span class="nt">-append</span> <span class="s2">"rdinit=/linuxrc console=ttyAMA0 loglevel=8"</span> <span class="nt">-dtb</span> <span class="nb">arch</span>/arm/boot/dts/vexpress-v2p-ca9.dtb <span class="nt">-nographic</span>  
+</pre></td></tr></tbody></table></code></pre></div>    </div>
+
+    <blockquote>
+      <p>以上命令中参数含义如下；
+-M：指定硬件芯片框架
+-m：指定运行内存大小
+-kernel：指定运行的内核镜像
+-dtb：指定具体芯片的配置信息
+-nographic：指定不使用图形界面</p>
+    </blockquote>
+  </li>
+  <li>
+    <h5 id="完成">完成</h5>
+
+    <p>如下图可以看到，成功运行了我们刚刚编译的新内核</p>
+
+    <p><img src="https://imgconvert.csdnimg.cn/aHR0cHM6Ly9pLmxvbGkubmV0LzIwMjAvMDYvMDgvNVZ0cHkyUkRrSlNUWmRoLnBuZw?x-oss-process=image/format,png" alt="image-20200608004409477" /></p>
+  </li>
+</ol>
+
+
+
+                <hr style="visibility: hidden;">
+                <ul class="pager">
+                    
+                    <li class="previous">
+                        <a href="/solve-the-problem-The-Redmi-Bluetooth.html" data-toggle="tooltip" data-placement="top" title="亲测：解决红米蓝牙耳机只有一边有声音的问题">
+                        Previous<br>
+                        <span>亲测：解决红米蓝牙耳机只有一边有声音的问题</span>
+                        </a>
+                    </li>
+                    
+                    
+                    <li class="next">
+                        <a href="/basic-use-of-wireshark.html" data-toggle="tooltip" data-placement="top" title="wireshark的基本使用">
+                        Next<br>
+                        <span>wireshark的基本使用</span>
+                        </a>
+                    </li>
+                    
+                </ul>
+                <hr style="visibility: hidden;">
+               
+              
+
+                
+                <!-- disqus 评论框 start -->
+                <div id= 'disqus_comment' class="comment">
+                    <div id="disqus_thread" class="disqus-thread"></div>
+                </div>
+                <!-- disqus 评论框 end -->
+                
+
+                
+          
+         
+
+            </div>  
+
+    <!-- Side Catalog Container -->
+        
+            <div class="
+                col-lg-2 col-lg-offset-0
+                visible-lg-block
+                sidebar-container
+                catalog-container">
+                <div class="side-catalog">
+                    <hr class="hidden-sm hidden-xs">
+                    <h5>
+                        <a class="catalog-toggle" href="#">CATALOG</a>
+                    </h5>
+                    <ul class="catalog-body"></ul>
+                </div>
+            </div>
+        
+
+    <!-- Sidebar Container -->
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                sidebar-container">
+
+                <!-- Featured Tags -->
+                
+<!--3d 
+<style type="text/css" media="screen">
+    html, body {
+        width: 100%;
+        height: 100%;
+    }
+    #wraptag {
+        position: relative;
+        left: 50%;
+        top:  50%;
+        /*text-align: center;*/
+    }
+    #wraptag .tag {
+        display: inline-block;
+        position:absolute;
+        /*width: 50px;*/
+        height: 50px;
+        line-height: 50px;
+        font-size: 20px;
+        text-decoration: none;
+        /*left: 10px;*/
+
+    }
+</style>
+tag-->
+<!-- Html Elements for Search -->
+<div class="dropdown navbar-form navbar-right ">
+ <input  id="search-input" name="word" type="text"  aria-haspopup="true" aria-expanded="false" data-toggle="dropdown" class="form-control typeahead"   placeholder="搜索">
+
+ <ul class="dropdown-menu" aria-labelledby="dLabel" id="results-container">
+
+ </ul>
+</div>
+
+<!-- Script pointing to jekyll-search.js -->
+<script src="/js/simple-jekyll-search.js" type="text/javascript"></script>
+
+<script>
+  window.simpleJekyllSearch = new SimpleJekyllSearch({
+    searchInput: document.getElementById('search-input'),
+    resultsContainer: document.getElementById('results-container'),
+    json: '/search.json',
+    searchResultTemplate: '<li><a href="{url}" title="{desc}">{title}</a></li>', // 文章列表模板
+    noResultsText: '没有搜索到文章', // 无搜索数据提示语
+    limit: 20, // 返回最大文章数
+    fuzzy: true // 是否模糊匹配
+})
+</script>
+<!----3d tag
+
+
+<section>
+    
+    <hr class="hidden-sm hidden-xs">
+    
+   
+    <h5><a href="/archive/">FEATURED TAGS</a></h5>
+    <div id="wraptag">
+        
+        
+        
+        
+        
+        
+                <a data-sort="0025" 
+                    href="/archive/?tag=Linux"
+                    title="Linux"
+                    class="tag"
+                    rel="3">Linux</a>
+        
+                <a data-sort="0018" 
+                    href="/archive/?tag=cpp"
+                    title="cpp"
+                    class="tag"
+                    rel="10">cpp</a>
+        
+                <a data-sort="0020" 
+                    href="/archive/?tag=%E7%AE%97%E6%B3%95"
+                    title="算法"
+                    class="tag"
+                    rel="8">算法</a>
+        
+                <a data-sort="0022" 
+                    href="/archive/?tag=%E5%90%8E%E7%AB%AF"
+                    title="后端"
+                    class="tag"
+                    rel="6">后端</a>
+        
+                <a data-sort="0022" 
+                    href="/archive/?tag=%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84"
+                    title="数据结构"
+                    class="tag"
+                    rel="6">数据结构</a>
+        
+                <a data-sort="0024" 
+                    href="/archive/?tag=%E6%80%A7%E8%83%BD"
+                    title="性能"
+                    class="tag"
+                    rel="4">性能</a>
+        
+                <a data-sort="0024" 
+                    href="/archive/?tag=mysql"
+                    title="mysql"
+                    class="tag"
+                    rel="4">mysql</a>
+        
+                <a data-sort="0026" 
+                    href="/archive/?tag=%E4%BA%8C%E8%BF%9B%E5%88%B6"
+                    title="二进制"
+                    class="tag"
+                    rel="2">二进制</a>
+        
+                <a data-sort="0026" 
+                    href="/archive/?tag=%E4%BF%A1%E6%81%AF%E5%AE%89%E5%85%A8"
+                    title="信息安全"
+                    class="tag"
+                    rel="2">信息安全</a>
+        
+                <a data-sort="0026" 
+                    href="/archive/?tag=%E5%89%8D%E7%AB%AF"
+                    title="前端"
+                    class="tag"
+                    rel="2">前端</a>
+        
+                <a data-sort="0026" 
+                    href="/archive/?tag=%E9%93%BE%E8%A1%A8"
+                    title="链表"
+                    class="tag"
+                    rel="2">链表</a>
+        
+                <a data-sort="0026" 
+                    href="/archive/?tag=java"
+                    title="java"
+                    class="tag"
+                    rel="2">java</a>
+        
+                <a data-sort="0026" 
+                    href="/archive/?tag=kali"
+                    title="kali"
+                    class="tag"
+                    rel="2">kali</a>
+        
+                <a data-sort="0026" 
+                    href="/archive/?tag=linux"
+                    title="linux"
+                    class="tag"
+                    rel="2">linux</a>
+    </div>
+</section>
+
+<script type="text/javascript" src="../js/cloudTag.js"></script>
+-->
+
+
+<section>
+    
+        <hr class="hidden-sm hidden-xs">
+    
+    <h5><a href="/archive/">FEATURED TAGS</a></h5>
+    <div class="tags">
+        
+        
+        
+        
+        
+        
+                <a data-sort="0025" 
+                    href="/archive/?tag=Linux"
+                    title="Linux"
+                    rel="3">Linux</a>
+        
+                <a data-sort="0018" 
+                    href="/archive/?tag=cpp"
+                    title="cpp"
+                    rel="10">cpp</a>
+        
+                <a data-sort="0020" 
+                    href="/archive/?tag=%E7%AE%97%E6%B3%95"
+                    title="算法"
+                    rel="8">算法</a>
+        
+                <a data-sort="0022" 
+                    href="/archive/?tag=%E5%90%8E%E7%AB%AF"
+                    title="后端"
+                    rel="6">后端</a>
+        
+                <a data-sort="0022" 
+                    href="/archive/?tag=%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84"
+                    title="数据结构"
+                    rel="6">数据结构</a>
+        
+                <a data-sort="0024" 
+                    href="/archive/?tag=%E6%80%A7%E8%83%BD"
+                    title="性能"
+                    rel="4">性能</a>
+        
+                <a data-sort="0024" 
+                    href="/archive/?tag=mysql"
+                    title="mysql"
+                    rel="4">mysql</a>
+        
+                <a data-sort="0026" 
+                    href="/archive/?tag=%E4%BA%8C%E8%BF%9B%E5%88%B6"
+                    title="二进制"
+                    rel="2">二进制</a>
+        
+                <a data-sort="0026" 
+                    href="/archive/?tag=%E4%BF%A1%E6%81%AF%E5%AE%89%E5%85%A8"
+                    title="信息安全"
+                    rel="2">信息安全</a>
+        
+                <a data-sort="0026" 
+                    href="/archive/?tag=%E5%89%8D%E7%AB%AF"
+                    title="前端"
+                    rel="2">前端</a>
+        
+                <a data-sort="0026" 
+                    href="/archive/?tag=%E9%93%BE%E8%A1%A8"
+                    title="链表"
+                    rel="2">链表</a>
+        
+                <a data-sort="0026" 
+                    href="/archive/?tag=java"
+                    title="java"
+                    rel="2">java</a>
+        
+                <a data-sort="0026" 
+                    href="/archive/?tag=kali"
+                    title="kali"
+                    rel="2">kali</a>
+        
+                <a data-sort="0026" 
+                    href="/archive/?tag=linux"
+                    title="linux"
+                    rel="2">linux</a>
+    </div>
+</section>
+
+
+
+                <!-- Friends Blog -->
+                
+<hr>
+<h5>FRIENDS</h5>
+<ul class="list-inline">
+  
+  <li><a href="https://2084team.cn/">2084 Team</a></li>
+  
+</ul>
+
+            </div>
+                         <!-- github 评论框 -->
+                
+
+        </div>
+
+                
+                <div class="row">
+                <div id="gitmentContainer"></div>
+              <script src="/js/gitment.browser.js"></script>
+            <link rel="stylesheet" href="/css/default.css"/>
+        </div>
+       
+             
+  
+            </div>
+    
+
+</article>
+  
+<!-- add support for mathjax by voleking-->
+
+
+
+
+
+
+<!-- disqus 公共JS代码 start (一个网页只需插入一次) -->
+<script type="text/javascript">
+    /* * * CONFIGURATION VARIABLES * * */
+    
+    var disqus_shortname = "donaldxy";
+    var disqus_identifier = "/Compilation-of-the-Linux-kernel";
+    var disqus_url = "https://czqu.cc/Compilation-of-the-Linux-kernel.html";
+
+    (function() {
+        if(is_global)
+        {
+            
+           
+             var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+
+        }
+        else{
+          
+        document.getElementById("disqus_comment").style.display= "none";
+
+        }
+       
+    })();
+</script>
+<!-- disqus 公共JS代码 end -->
+
+<!-- github 公共JS代码 end -->
+
+
+<script>
+ 
+    if(!is_global){
+       
+    var gitment = new Gitment({
+        id: '/Compilation-of-the-Linux-kernel.html',
+        owner: "czqu",
+        repo: "czqu.github.io",
+        oauth: {
+            client_id: "23a9781cae2172c5d591",
+            client_secret: "4493f8b5c72f024f1a7b79d556b7e43599f918ed",
+        },
+    });
+    gitment.render('gitmentContainer');}
+    else{
+        document.getElementById("gitmentContainer").style.display= "none";
+
+
+    }
+</script>
+
+
+
+<!-- async load function -->
+<script>
+    function async(u, c) {
+      var d = document, t = 'script',
+          o = d.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+      o.src = u;
+      if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+      s.parentNode.insertBefore(o, s);
+    }
+</script>
+<!-- anchor-js, Doc:http://bryanbraun.github.io/anchorjs/ -->
+<script>
+    async("/js/anchor.min.js",function(){
+        anchors.options = {
+          visible: 'hover',
+          placement: 'right',
+          // icon: '#'
+        };
+        anchors.add().remove('.intro-header h1').remove('.subheading').remove('.sidebar-container h5');
+    })
+</script>
+<style>
+    /* place left on bigger screen */
+    @media all and (min-width: 800px) {
+        .anchorjs-link{
+            position: absolute;
+            left: -0.75em;
+            font-size: 1.1em;
+            margin-top : -0.1em;
+        }
+    }
+</style>
+
+
+
+    <!-- Footer -->
+<footer>
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <!-- SNS Link -->
+                
+
+
+<ul class="list-inline text-center">
+  
+
+    
+    <li>
+      <a id="rss"  href="/feed.xml">
+        
+      </script>
+        <span class="fa-stack fa-lg">
+        <i class="fa fa-circle fa-stack-2x"></i>
+        <i class="fa fa-rss fa-stack-1x fa-inverse"></i>
+        </span>
+        </a>
+        </li>
+        
+        
+        
+        <li>
+        <a target="_blank" href="https://www.zhihu.com/people/czqu">
+        <span class="fa-stack fa-lg">
+        <i class="fa fa-circle fa-stack-2x"></i>
+        <i class="fa  fa-stack-1x fa-inverse">知</i>
+        </span>
+        </a>
+        </li>
+        
+        
+        
+        
+        
+        
+        <li>
+        <a target="_blank" href="https://blog.csdn.net/weixin_44409903">
+        <span class="fa-stack fa-lg">
+        <i class="fa fa-circle fa-stack-2x"></i>
+        <i class="fa  fa-stack-1x fa-inverse">C</i>
+        </span>
+        </a>
+        </li>
+        
+        </ul>
+
+                <p class="copyright text-muted">
+                    Copyright &copy; Czq's Blog 2020
+                    <br>  <a id='switchsite' href='https://blog.xiyuan.ren/'> 国内访问</a> &nbsp; &nbsp;&nbsp;
+                    <a  href='/license/'>许可协议  License </a>
+                    <script type="text/javascript">
+                        {
+
+                            var linkobj= document.getElementById("switchsite");
+                            current_url = window.location.href;
+
+
+
+
+                            if(is_global)
+                            {
+                                target_url = replacedomain(current_url,document.domain,"blog.czqu.ren");
+                                
+                                linkobj.href =target_url;  
+                                linkobj.innerText ='国内访问';
+
+                            }else
+                            {
+                             target_url = replacedomain(current_url,document.domain,"czqu.cc");
+                            
+                             linkobj.href =target_url; 
+                             linkobj.innerText ='海外访问';
+
+                         }
+
+
+
+
+
+                     }
+
+                 </script>
+             </p>
+         </div>
+     </div>
+ </div>
+</footer>
+
+<!-- jQuery -->
+<script src="/js/jquery.min.js "></script>
+
+<!-- Bootstrap Core JavaScript -->
+<!-- Currently, only navbar scroll-down effect at desktop still depends on this -->
+<script src="/js/bootstrap.min.js "></script>
+
+<!-- Custom Theme JavaScript -->
+<script src="/js/hux-blog.min.js "></script>
+
+<!-- Service Worker -->
+
+<script src="/js/snackbar.js "></script>
+<script src="/js/sw-registration.js "></script>
+
+
+<!-- async load function -->
+<script>
+    function async(u, c) {
+        var d = document, t = 'script',
+        o = d.createElement(t),
+        s = d.getElementsByTagName(t)[0];
+        o.src = u;
+        if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+        s.parentNode.insertBefore(o, s);
+    }
+</script>
+
+<!--
+     Because of the native support for backtick-style fenced code blocks
+     right within the Markdown is landed in Github Pages,
+     From V1.6, There is no need for Highlight.js,
+     so Huxblog drops it officially.
+
+     - https://github.com/blog/2100-github-pages-now-faster-and-simpler-with-jekyll-3-0
+     - https://help.github.com/articles/creating-and-highlighting-code-blocks/
+     - https://github.com/jneen/rouge/wiki/list-of-supported-languages-and-lexers
+ -->
+<!--
+    <script>
+        async("http://cdn.bootcss.com/highlight.js/8.6/highlight.min.js", function(){
+            hljs.initHighlightingOnLoad();
+        })
+    </script>
+    <link href="http://cdn.bootcss.com/highlight.js/8.6/styles/github.min.css" rel="stylesheet">
+-->
+
+
+
+
+
+
+
+<!--fastClick.js -->
+<script>
+    async("/js/fastclick.min.js", function () {
+        var $nav = document.querySelector("nav");
+        if ($nav) FastClick.attach($nav);
+    })
+</script>
+
+
+<!-- Google Analytics -->
+
+
+<script>
+ var _gaId = 'UA-171260366-1';
+ var _gaDomain = 'czqu.cc';
+
+
+ if(!is_global)
+ {
+    _gaId = 'UA-171260366-2';
+    _gaDomain = 'blog.czqu.ren';
+}
+else
+{
+ _gaId = 'UA-171260366-1';
+ _gaDomain = 'czqu.cc';
+}
+
+
+
+
+
+
+
+
+
+    // Originial
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r; i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date(); a = s.createElement(o),
+        m = s.getElementsByTagName(o)[0]; a.async = 1; a.src = g; m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+
+    ga('create', _gaId, _gaDomain);
+    ga('send', 'pageview');
+</script>
+
+
+
+<!-- Baidu Tongji -->
+
+<script>
+    // dynamic User by Hux
+    var _baId = '202567f05f85026a62a117eec19b4a09';
+    var linkobj= document.getElementById("switchsite");
+    if(!is_global)
+    {
+        _baId = '496677e3ceac55257d74003c6c3c2f3b';
+    }
+    else
+    {
+     _baId = '202567f05f85026a62a117eec19b4a09';
+
+ }
+
+    // Originial
+    var _hmt = _hmt || [];
+    (function () {
+        var hm = document.createElement("script");
+        hm.src = "//hm.baidu.com/hm.js?" + _baId;
+        var s = document.getElementsByTagName("script")[0];
+        s.parentNode.insertBefore(hm, s);
+    })();
+</script>
+
+
+
+<!-- Side Catalog -->
+
+<script type="text/javascript">
+    function generateCatalog(selector) {
+
+        // interop with multilangual 
+        if ('' == 'true') {
+            _containerSelector = 'div.post-container.active'
+        } else {
+            _containerSelector = 'div.post-container'
+        }
+
+        // init
+        var P = $(_containerSelector), a, n, t, l, i, c;
+        a = P.find('h1,h2,h3,h4,h5,h6');
+
+        // clean
+        $(selector).html('')
+
+        // appending
+        a.each(function () {
+            n = $(this).prop('tagName').toLowerCase();
+            i = "#" + $(this).prop('id');
+            t = $(this).text();
+            c = $('<a href="' + i + '" rel="nofollow">' + t + '</a>');
+            l = $('<li class="' + n + '_nav"></li>').append(c);
+            $(selector).append(l);
+        });
+        return true;
+    }
+
+    generateCatalog(".catalog-body");
+
+    // toggle side catalog
+    $(".catalog-toggle").click((function (e) {
+        e.preventDefault();
+        $('.side-catalog').toggleClass("fold")
+    }))
+
+    /*
+     * Doc: https://github.com/davist11/jQuery-One-Page-Nav
+     * Fork by Hux to support padding
+     */
+     async("/js/jquery.nav.js", function () {
+        $('.catalog-body').onePageNav({
+            currentClass: "active",
+            changeHash: !1,
+            easing: "swing",
+            filter: "",
+            scrollSpeed: 700,
+            scrollOffset: 0,
+            scrollThreshold: .2,
+            begin: null,
+            end: null,
+            scrollChange: null,
+            padding: 80
+        });
+    });
+</script>
+
+
+
+<!-- Multi-Lingual -->
+
+
+
+<!-- Image to hack wechat -->
+<img src="/img/icon_wechat.png" width="0" height="0" />
+<!-- Migrate from head to bottom, no longer block render and still work -->
+
+</body>
+
+</html>
