@@ -7,3 +7,4 @@ Disallow: /js/*
 Allow: /index.html
 
 sitemap: https://czqu.cc/sitemap.xml
+sitemap: https://czqu.cc/m/sitemap.xml
